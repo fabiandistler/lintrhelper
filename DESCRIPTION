@@ -1,0 +1,24 @@
+Package: lintrhelper
+Type: Package
+Title: Helper Functions for Creating Custom Lintr Rules
+Version: 0.1.0
+Authors@R: person("Author", "Name", email = "author@example.com", role = c("aut", "cre"))
+Description: Provides helper functions and utilities to simplify the creation
+    of custom linters for the 'lintr' package. Includes XPath-based linter
+    builders, testing utilities, and template examples for common linting
+    patterns.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Imports:
+    lintr (>= 3.0.0),
+    xml2,
+    rlang
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+URL: https://github.com/fabiandistler/lintrhelper
+BugReports: https://github.com/fabiandistler/lintrhelper/issues

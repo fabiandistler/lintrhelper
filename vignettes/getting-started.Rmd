@@ -1,0 +1,282 @@
+---
+title: "Getting Started with lintrhelper"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with lintrhelper}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+`lintrhelper` makes it easy to create custom linters for the `lintr` package. This vignette will walk you through the basics of creating and testing custom linters.
+
+## Installation
+
+```{r eval=FALSE}
+# Install from GitHub
+devtools::install_github("fabiandistler/lintrhelper")
+```
+
+```{r setup}
+library(lintrhelper)
+```
+
+## Why Create Custom Linters?
+
+While `lintr` comes with many built-in linters, you might want to create custom linters for:
+
+- **Team-specific style guides**: Enforce conventions unique to your team or organization
+- **Domain-specific rules**: Check for patterns specific to your field (e.g., statistical best practices)
+- **Package-specific warnings**: Flag deprecated functions or suggest package-specific alternatives
+- **Project conventions**: Enforce naming conventions, file structure rules, etc.
+
+## Your First Linter
+
+Let's create a simple linter that warns against using `T` and `F` instead of `TRUE` and `FALSE`:
+
+```{r eval=FALSE}
+my_linter <- create_simple_linter(
+  xpath = "//SYMBOL[text() = 'T' or text() = 'F']",
+  message = "Use TRUE/FALSE instead of T/F.",
+  linter_name = "no_t_f_linter",
+  type = "warning"
+)
+
+# Test it
+test_linter(my_linter, "x <- T", should_lint = TRUE)
+test_linter(my_linter, "x <- TRUE", should_lint = FALSE)
+```
+
+### Breaking it Down
+
+- **xpath**: An XPath expression that matches the problematic code patterns in R's parse tree
+- **message**: The message to show users when this pattern is found
+- **linter_name**: A unique identifier for your linter
+- **type**: Severity level - "style", "warning", or "error"
+
+## Understanding XPath
+
+XPath is a query language for XML. R code is parsed into an XML tree, and linters use XPath to find problematic patterns.
+
+### Common XPath Patterns
+
+```{r eval=FALSE}
+# View all common patterns
+xpath_patterns()
+
+# View specific category
+xpath_patterns("functions")
+```
+
+Some examples:
+
+- `//SYMBOL` - All symbols (variable names)
+- `//SYMBOL_FUNCTION_CALL` - Function calls
+- `//SYMBOL[text() = 'my_var']` - Specific symbol
+- `//NUM_CONST` - Numeric constants
+- `//STR_CONST` - String constants
+
+### Testing XPath Expressions
+
+Use `quick_test()` to rapidly test XPath expressions:
+
+```{r eval=FALSE}
+quick_test("//SYMBOL[text() = 'T']", "x <- T")
+# Shows if the XPath matches and where
+```
+
+## Function Call Linters
+
+A very common use case is flagging specific function calls:
+
+```{r eval=FALSE}
+no_sapply <- create_function_call_linter(
+  function_names = "sapply",
+  message = "Use vapply() instead of {function} for type-safe code.",
+  linter_name = "no_sapply_linter"
+)
+
+# Test it
+test_linter(no_sapply, "result <- sapply(1:10, sqrt)", should_lint = TRUE)
+```
+
+You can flag multiple functions:
+
+```{r eval=FALSE}
+deprecated_funcs <- create_function_call_linter(
+  function_names = c("sapply", "mapply"),
+  message = "Function {function} is deprecated in our style guide.",
+  linter_name = "deprecated_functions"
+)
+```
+
+Note the `{function}` placeholder - it will be replaced with the actual function name found.
+
+## Assignment Linters
+
+Another common pattern is enforcing assignment operator style:
+
+```{r eval=FALSE}
+prefer_arrow <- create_assignment_linter(
+  forbidden_operators = "=",
+  message = "Use <- for assignment, not =.",
+  linter_name = "prefer_arrow_assignment",
+  type = "style"
+)
+
+test_linter(prefer_arrow, "x = 5", should_lint = TRUE)
+test_linter(prefer_arrow, "x <- 5", should_lint = FALSE)
+```
+
+## Testing Your Linters
+
+The `test_linter()` function provides several testing modes:
+
+```{r eval=FALSE}
+# Basic: does it lint?
+test_linter(my_linter, "x <- T", should_lint = TRUE)
+
+# Expect no lints
+test_linter(my_linter, "x <- TRUE", should_lint = FALSE)
+
+# Check exact number of lints
+test_linter(my_linter, "a <- T; b <- T", n_lints = 2)
+
+# Verify message content
+test_linter(
+  my_linter,
+  "x <- T",
+  message_pattern = "TRUE/FALSE"
+)
+```
+
+## Using Templates
+
+Get started quickly with templates:
+
+```{r eval=FALSE}
+# View all templates
+linter_template("all")
+
+# Get specific template
+linter_template("simple")
+linter_template("function_call")
+linter_template("assignment")
+linter_template("advanced")
+```
+
+## Example Linters
+
+The package includes several example linters you can use or learn from:
+
+```{r eval=FALSE}
+# Ready-to-use linters
+lintr::lint("my_script.R", linters = no_t_f_linter())
+lintr::lint("my_script.R", linters = no_attach_linter())
+lintr::lint("my_script.R", linters = prefer_arrow_assignment_linter())
+lintr::lint("my_script.R", linters = no_sapply_linter())
+```
+
+## Advanced Custom Linters
+
+For more complex logic, you can build linters using the full lintr API:
+
+```{r eval=FALSE}
+library(lintr)
+library(xml2)
+
+advanced_linter <- function() {
+  lintr::Linter(function(source_expression) {
+    if (!lintr::is_lint_level(source_expression, "file")) {
+      return(list())
+    }
+
+    xml <- source_expression$full_xml_parsed_content
+
+    # Find all function calls
+    nodes <- xml2::xml_find_all(xml, "//SYMBOL_FUNCTION_CALL")
+
+    # Custom filtering logic
+    bad_nodes <- Filter(function(node) {
+      func_name <- xml2::xml_text(node)
+      # Flag functions starting with "old_"
+      grepl("^old_", func_name)
+    }, nodes)
+
+    # Generate custom lints
+    lints <- lapply(bad_nodes, function(node) {
+      func_name <- xml2::xml_text(node)
+      new_name <- sub("^old_", "new_", func_name)
+
+      lintr::xml_nodes_to_lints(
+        node,
+        source_expression = source_expression,
+        lint_message = sprintf(
+          "Function %s is deprecated. Use %s instead.",
+          func_name, new_name
+        ),
+        type = "warning"
+      )
+    })
+
+    unlist(lints, recursive = FALSE)
+  })
+}
+```
+
+## Using Your Linters with lintr
+
+Once you've created your linters, use them with lintr:
+
+```{r eval=FALSE}
+# Single file
+lintr::lint("my_script.R", linters = my_linter())
+
+# Multiple linters
+lintr::lint(
+  "my_script.R",
+  linters = lintr::linters_with_defaults(
+    my_linter = my_linter(),
+    another_linter = another_linter()
+  )
+)
+
+# Entire package
+lintr::lint_package(
+  linters = lintr::linters_with_defaults(
+    my_linter = my_linter()
+  )
+)
+```
+
+## Best Practices
+
+1. **Start simple**: Begin with `create_simple_linter()` and XPath
+2. **Test thoroughly**: Use `test_linter()` with various code examples
+3. **Use quick_test()**: Iterate quickly when developing XPath expressions
+4. **Clear messages**: Write helpful, actionable lint messages
+5. **Appropriate severity**: Use "style" for preferences, "warning" for potential issues, "error" for serious problems
+6. **Document your linters**: Explain why a pattern is problematic
+
+## Next Steps
+
+- Read the [lintr creating linters vignette](https://lintr.r-lib.org/articles/creating_linters.html)
+- Learn more about [XPath](https://www.w3schools.com/xml/xpath_intro.asp)
+- Explore the source code of built-in lintr linters
+- Share your useful linters with the community!
+
+## Getting Help
+
+If you encounter issues or have questions:
+
+- Check `?create_simple_linter` and other function documentation
+- Use `linter_template()` and `xpath_patterns()` for reference
+- Visit the [GitHub repository](https://github.com/fabiandistler/lintrhelper)
