@@ -1,8 +1,8 @@
 # lintrhelper
 
-> Helper Functions for Creating Custom Lintr Rules
+> Helper Functions for Creating Custom Lintr Rules - **No XPath Knowledge Required!**
 
-`lintrhelper` makes it easy to create custom linters for the [lintr](https://lintr.r-lib.org/) package. It provides simplified interfaces, testing utilities, and templates to help you quickly build and test your own linting rules.
+`lintrhelper` makes it incredibly easy to create custom linters for the [lintr](https://lintr.r-lib.org/) package. You don't need to know XPath, XML, or parse trees - just use simple, intuitive functions to describe what you want to lint!
 
 ## Installation
 
@@ -21,76 +21,106 @@ Creating custom linters for lintr typically involves:
 - Handling source expressions and XML nodes
 - Setting up proper testing
 
-`lintrhelper` simplifies all of this with intuitive helper functions.
+`lintrhelper` **eliminates all of this complexity**! Just describe what you want in plain terms.
 
-## Quick Start
+## Quick Start - No XPath Required!
 
-### Create a Simple Linter
+### Forbid Specific Symbols/Variables
 
 ```r
 library(lintrhelper)
 
-# Create a linter that warns against using T/F instead of TRUE/FALSE
-my_linter <- create_simple_linter(
-  xpath = "//SYMBOL[text() = 'T' or text() = 'F']",
-  message = "Use TRUE/FALSE instead of T/F.",
-  linter_name = "no_t_f_linter",
-  type = "warning"
+# Ban T and F - just list them!
+no_t_f <- forbid_symbols(
+  c("T", "F"),
+  "Use TRUE/FALSE instead of {symbol}."
 )
 
 # Test it
-test_linter(my_linter, "x <- T", should_lint = TRUE)
-test_linter(my_linter, "x <- TRUE", should_lint = FALSE)
+test_linter(no_t_f, "x <- T", should_lint = TRUE)
+test_linter(no_t_f, "x <- TRUE", should_lint = FALSE)
 
-# Use it with lintr
-lintr::lint("my_script.R", linters = my_linter())
+# Use with lintr
+lintr::lint("my_script.R", linters = no_t_f())
 ```
 
-### Create a Function Call Linter
+### Forbid Specific Functions
 
 ```r
-# Warn against using deprecated functions
-no_sapply <- create_function_call_linter(
-  function_names = "sapply",
-  message = "Use vapply() instead of {function} for type-safe code.",
-  linter_name = "no_sapply_linter"
+# Ban dangerous functions - just name them!
+no_attach <- forbid_functions(
+  "attach",
+  "Don't use {function}(). Use with() instead."
 )
 
-test_linter(no_sapply, "result <- sapply(1:10, sqrt)", should_lint = TRUE)
+# Or suggest alternatives automatically
+no_sapply <- forbid_functions(
+  "sapply",
+  alternatives = "vapply"  # Auto-generates helpful message!
+)
+
+# Ban multiple functions at once
+no_deprecated <- forbid_functions(
+  c("sapply", "mapply", "tapply"),
+  "Function {function}() is discouraged."
+)
 ```
 
-### Create an Assignment Linter
+### Enforce Naming Conventions
 
 ```r
-# Enforce <- over =
-prefer_arrow <- create_assignment_linter(
-  forbidden_operators = "=",
-  message = "Use <- for assignment, not =.",
-  linter_name = "prefer_arrow_assignment"
+# Require snake_case - just give a regex pattern!
+snake_case <- require_naming_pattern(
+  "^[a-z][a-z0-9_]*$",
+  "Variable '{symbol}' should use snake_case."
 )
 
-test_linter(prefer_arrow, "x = 5", should_lint = TRUE)
-test_linter(prefer_arrow, "x <- 5", should_lint = FALSE)
+test_linter(snake_case, "myVar <- 1", should_lint = TRUE)
+test_linter(snake_case, "my_var <- 1", should_lint = FALSE)
+```
+
+### Enforce Assignment Style
+
+```r
+# Prefer <- (the most common style)
+use_arrow <- enforce_assignment_operator("<-")
+
+test_linter(use_arrow, "x = 5", should_lint = TRUE)
+test_linter(use_arrow, "x <- 5", should_lint = FALSE)
 ```
 
 ## Main Functions
 
-### Linter Builders
+### 🚀 High-Level Functions (No XPath!)
 
-- **`create_simple_linter()`** - Build XPath-based linters quickly
-- **`create_function_call_linter()`** - Specialized for linting function calls
-- **`create_assignment_linter()`** - Specialized for linting assignment operators
+These functions let you create linters without any XPath knowledge:
 
-### Testing Utilities
+- **`forbid_symbols()`** - Ban specific variable names
+- **`forbid_functions()`** - Ban specific function calls (with optional alternatives)
+- **`require_naming_pattern()`** - Enforce naming conventions with regex
+- **`require_function_naming_pattern()`** - Enforce function naming conventions
+- **`enforce_assignment_operator()`** - Prefer `<-`, `=`, or `->`
+- **`require_function_arguments()`** - Ensure functions are called with specific arguments
+- **`limit_line_length()`** - Enforce maximum line length
+
+### 🧪 Testing Utilities
 
 - **`test_linter()`** - Simplified testing for your linters
-- **`quick_test()`** - One-liner for rapid XPath testing
+- **`quick_test()`** - One-liner for rapid testing
 
-### Templates & Examples
+### 📚 Advanced (If You Want XPath)
 
-- **`linter_template()`** - Get code templates for different linter types
-- **`xpath_patterns()`** - Reference guide for common XPath patterns
-- **Example linters included**: `no_t_f_linter()`, `no_attach_linter()`, `prefer_arrow_assignment_linter()`, etc.
+For advanced users who want more control:
+
+- **`create_simple_linter()`** - Build XPath-based linters
+- **`create_function_call_linter()`** - XPath-based function call linters
+- **`create_assignment_linter()`** - XPath-based assignment linters
+- **`linter_template()`** - Code templates
+- **`xpath_patterns()`** - XPath reference guide
+
+### 💡 Ready-to-Use Examples
+
+- `no_t_f_linter()`, `no_attach_linter()`, `prefer_arrow_assignment_linter()`, `no_sapply_linter()`, `no_one_length_linter()`
 
 ## Getting Help
 
@@ -116,71 +146,83 @@ xpath_patterns("functions")
 xpath_patterns("operators")
 ```
 
-## Examples
+## More Examples
 
-### Example 1: No paste0
+### Ban Single-Letter Variables
 
 ```r
-no_paste0 <- create_function_call_linter(
-  function_names = "paste0",
-  message = "Consider using paste(..., sep = '') instead of {function}.",
-  linter_name = "no_paste0_linter",
-  type = "style"
+# No XPath needed - just list the letters!
+no_single_letters <- forbid_symbols(
+  letters,  # a, b, c, ..., z
+  "Avoid single-letter variable name '{symbol}'."
 )
 
-# Test
-code <- "result <- paste0(first_name, ' ', last_name)"
-test_linter(no_paste0, code, should_lint = TRUE, message_pattern = "paste")
+test_linter(no_single_letters, "x <- 5", should_lint = TRUE)
+test_linter(no_single_letters, "count <- 5", should_lint = FALSE)
 ```
 
-### Example 2: Multiple Deprecated Functions
+### Enforce Function Naming Convention
 
 ```r
-deprecated_linter <- create_function_call_linter(
-  function_names = c("sapply", "mapply", "tapply"),
-  message = "Function {function} is deprecated in our style guide.",
-  linter_name = "deprecated_functions"
+# Functions should start with verbs
+verb_functions <- require_function_naming_pattern(
+  "^(get|set|calculate|compute|check|is|has|create|update|delete|find|load|save)",
+  "Function '{function}' should start with a verb."
 )
 
+test_linter(verb_functions, "result <- process()", should_lint = TRUE)
+test_linter(verb_functions, "result <- calculate_total()", should_lint = FALSE)
+```
+
+### Forbid "temp" in Names
+
+```r
+# Use invert=TRUE to forbid patterns that DO match
+no_temp_names <- require_naming_pattern(
+  "temp",
+  "Variable '{symbol}' should not contain 'temp'.",
+  invert = TRUE
+)
+
+test_linter(no_temp_names, "temp_var <- 1", should_lint = TRUE)
+test_linter(no_temp_names, "result <- 1", should_lint = FALSE)
+```
+
+### Require Explicit Arguments
+
+```r
+# Always specify stringsAsFactors
+explicit_saf <- require_function_arguments(
+  "data.frame",
+  "stringsAsFactors",
+  "Always specify stringsAsFactors explicitly in data.frame()."
+)
+
+# Lints this:
+test_linter(explicit_saf, "df <- data.frame(x = 1:3)", should_lint = TRUE)
+
+# Passes this:
 test_linter(
-  deprecated_linter,
-  "result <- sapply(x, mean)",
-  n_lints = 1
+  explicit_saf,
+  "df <- data.frame(x = 1:3, stringsAsFactors = FALSE)",
+  should_lint = FALSE
 )
 ```
 
-### Example 3: Advanced Custom Linter
-
-For more complex linting logic, you can still use the full lintr API:
+### Team Style Guide Example
 
 ```r
-library(lintr)
-library(xml2)
+# Combine multiple rules for your team
+my_team_linters <- lintr::linters_with_defaults(
+  no_t_f = forbid_symbols(c("T", "F"), "Use TRUE/FALSE")(),
+  snake_case = require_naming_pattern("^[a-z][a-z0-9_]*$", "Use snake_case")(),
+  use_arrow = enforce_assignment_operator("<-")(),
+  no_attach = forbid_functions("attach", alternatives = "with")(),
+  line_length = limit_line_length(80)()
+)
 
-complex_linter <- function() {
-  lintr::Linter(function(source_expression) {
-    if (!lintr::is_lint_level(source_expression, "file")) {
-      return(list())
-    }
-
-    xml <- source_expression$full_xml_parsed_content
-
-    # Your custom logic here
-    nodes <- xml2::xml_find_all(xml, "//SYMBOL_FUNCTION_CALL")
-
-    bad_nodes <- Filter(function(node) {
-      func_name <- xml2::xml_text(node)
-      grepl("^old_", func_name)  # Custom pattern
-    }, nodes)
-
-    lintr::xml_nodes_to_lints(
-      bad_nodes,
-      source_expression = source_expression,
-      lint_message = "This function is deprecated.",
-      type = "warning"
-    )
-  })
-}
+# Apply to your project
+lintr::lint_package(linters = my_team_linters)
 ```
 
 ## Testing Your Linters

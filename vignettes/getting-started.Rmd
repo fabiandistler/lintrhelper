@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`lintrhelper` makes it easy to create custom linters for the `lintr` package. This vignette will walk you through the basics of creating and testing custom linters.
+`lintrhelper` makes it easy to create custom linters for the `lintr` package. **The best part? You don't need to know XPath or understand XML parse trees!** This vignette will show you how to create powerful linters using simple, intuitive functions.
 
 ## Installation
 
@@ -38,29 +38,29 @@ While `lintr` comes with many built-in linters, you might want to create custom 
 - **Package-specific warnings**: Flag deprecated functions or suggest package-specific alternatives
 - **Project conventions**: Enforce naming conventions, file structure rules, etc.
 
-## Your First Linter
+## Your First Linter - No XPath!
 
-Let's create a simple linter that warns against using `T` and `F` instead of `TRUE` and `FALSE`:
+Let's create a linter that warns against using `T` and `F` instead of `TRUE` and `FALSE`:
 
 ```{r eval=FALSE}
-my_linter <- create_simple_linter(
-  xpath = "//SYMBOL[text() = 'T' or text() = 'F']",
-  message = "Use TRUE/FALSE instead of T/F.",
-  linter_name = "no_t_f_linter",
-  type = "warning"
+# Just list the symbols you want to forbid!
+no_t_f <- forbid_symbols(
+  c("T", "F"),
+  "Use TRUE/FALSE instead of {symbol}."
 )
 
 # Test it
-test_linter(my_linter, "x <- T", should_lint = TRUE)
-test_linter(my_linter, "x <- TRUE", should_lint = FALSE)
+test_linter(no_t_f, "x <- T", should_lint = TRUE)
+test_linter(no_t_f, "x <- TRUE", should_lint = FALSE)
 ```
+
+That's it! No XPath, no XML, just plain R.
 
 ### Breaking it Down
 
-- **xpath**: An XPath expression that matches the problematic code patterns in R's parse tree
-- **message**: The message to show users when this pattern is found
-- **linter_name**: A unique identifier for your linter
-- **type**: Severity level - "style", "warning", or "error"
+- **symbols**: A character vector of variable names to forbid
+- **message**: The message to show users. `{symbol}` gets replaced with the actual symbol found
+- **type**: (optional) Severity level - "style", "warning", or "error"
 
 ## Understanding XPath
 

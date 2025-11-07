@@ -1,12 +1,13 @@
 Package: lintrhelper
 Type: Package
-Title: Helper Functions for Creating Custom Lintr Rules
+Title: Create Custom Lintr Rules Without XPath Knowledge
 Version: 0.1.0
 Authors@R: person("Author", "Name", email = "author@example.com", role = c("aut", "cre"))
-Description: Provides helper functions and utilities to simplify the creation
-    of custom linters for the 'lintr' package. Includes XPath-based linter
-    builders, testing utilities, and template examples for common linting
-    patterns.
+Description: Simplifies the creation of custom linters for the 'lintr' package
+    without requiring XPath or XML knowledge. Provides high-level functions to
+    forbid symbols, ban functions, enforce naming conventions, require specific
+    arguments, and more. Also includes XPath-based builders for advanced users,
+    testing utilities, and ready-to-use example linters.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

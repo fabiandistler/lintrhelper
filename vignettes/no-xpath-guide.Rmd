@@ -1,0 +1,316 @@
+---
+title: "Creating Linters Without XPath"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating Linters Without XPath}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## The Problem with Traditional Linting
+
+Creating custom linters for `lintr` traditionally requires:
+
+1. Understanding how R code is parsed into an XML tree
+2. Learning XPath query syntax
+3. Navigating complex XML node structures
+4. Understanding the relationship between R syntax and XML elements
+
+This is a significant barrier for most R users who just want to enforce simple coding standards.
+
+## The lintrhelper Solution
+
+`lintrhelper` provides high-level functions that abstract away all the XPath complexity. You describe **what** you want to lint, not **how** to find it in the parse tree.
+
+```{r setup}
+library(lintrhelper)
+```
+
+## Common Linting Scenarios
+
+### 1. Forbid Specific Symbols
+
+**Use case**: Ban T/F, single-letter variables, or reserved names
+
+```{r eval=FALSE}
+# Ban T and F
+no_t_f <- forbid_symbols(
+  c("T", "F"),
+  "Use TRUE/FALSE instead of {symbol}."
+)
+
+# Ban all single-letter variable names
+no_single_letters <- forbid_symbols(
+  letters,
+  "Avoid single-letter variable '{symbol}'."
+)
+
+# Ban specific reserved words for your project
+no_reserved <- forbid_symbols(
+  c("tmp", "temp", "data", "result"),
+  "'{symbol}' is too generic. Use a more descriptive name."
+)
+```
+
+### 2. Forbid Specific Functions
+
+**Use case**: Ban deprecated or discouraged functions
+
+```{r eval=FALSE}
+# Ban attach()
+no_attach <- forbid_functions(
+  "attach",
+  "Don't use {function}(). Use with() or explicit $ notation instead."
+)
+
+# Ban multiple functions at once
+no_apply_family <- forbid_functions(
+  c("sapply", "mapply", "tapply"),
+  "Use purrr or vapply() instead of {function}()."
+)
+
+# Suggest alternatives automatically
+prefer_vapply <- forbid_functions(
+  "sapply",
+  alternatives = "vapply"
+  # Auto-generates: "Use vapply() instead of sapply()."
+)
+
+# Multiple alternatives
+prefer_tidyverse <- forbid_functions(
+  "subset",
+  alternatives = c("dplyr::filter", "dplyr::select")
+)
+```
+
+### 3. Enforce Naming Conventions
+
+**Use case**: Require snake_case, camelCase, or other patterns
+
+```{r eval=FALSE}
+# Require snake_case for variables
+snake_case <- require_naming_pattern(
+  "^[a-z][a-z0-9_]*$",
+  "Variable '{symbol}' should use snake_case."
+)
+
+# Require camelCase
+camel_case <- require_naming_pattern(
+  "^[a-z][a-zA-Z0-9]*$",
+  "Variable '{symbol}' should use camelCase."
+)
+
+# Forbid names starting with uppercase (use invert=TRUE)
+no_uppercase_start <- require_naming_pattern(
+  "^[A-Z]",
+  "Variable '{symbol}' should not start with uppercase.",
+  invert = TRUE
+)
+
+# Forbid underscores
+no_underscores <- require_naming_pattern(
+  "_",
+  "Variable '{symbol}' should not contain underscores.",
+  invert = TRUE
+)
+
+# Require specific prefixes
+require_prefix <- require_naming_pattern(
+  "^(m_|g_|l_)",
+  "Variable '{symbol}' should start with scope prefix (m_, g_, or l_)."
+)
+```
+
+### 4. Enforce Function Naming
+
+**Use case**: Require verbs, specific patterns, or avoid patterns
+
+```{r eval=FALSE}
+# Functions should start with verbs
+verb_functions <- require_function_naming_pattern(
+  "^(get|set|calculate|compute|check|is|has|create|update|delete|find|load|save|validate)",
+  "Function '{function}' should start with a verb."
+)
+
+# No "helper" or "util" in function names
+no_generic_names <- require_function_naming_pattern(
+  "helper|util|misc|other",
+  "Function '{function}' should have a more descriptive name.",
+  invert = TRUE
+)
+
+# API functions must start with "api_"
+api_prefix <- require_function_naming_pattern(
+  "^api_",
+  "Public API function '{function}' must start with 'api_'."
+)
+```
+
+### 5. Enforce Assignment Style
+
+**Use case**: Standardize on `<-`, `=`, or `->`
+
+```{r eval=FALSE}
+# Prefer <- (most common in R)
+use_arrow <- enforce_assignment_operator("<-")
+
+# Prefer = (some teams prefer this)
+use_equals <- enforce_assignment_operator("=")
+
+# The function automatically generates appropriate messages
+```
+
+### 6. Require Explicit Arguments
+
+**Use case**: Ensure critical arguments are always specified
+
+```{r eval=FALSE}
+# Always specify stringsAsFactors in data.frame()
+explicit_saf <- require_function_arguments(
+  "data.frame",
+  "stringsAsFactors",
+  "Always specify stringsAsFactors explicitly."
+)
+
+# Require na.rm in mean()
+explicit_na_rm <- require_function_arguments(
+  "mean",
+  "na.rm",
+  "Always specify na.rm in mean()."
+)
+
+# Multiple required arguments
+explicit_args <- require_function_arguments(
+  "read.csv",
+  c("stringsAsFactors", "header"),
+  "Always specify stringsAsFactors and header in read.csv()."
+)
+```
+
+### 7. Limit Line Length
+
+**Use case**: Maintain readable code width
+
+```{r eval=FALSE}
+# Standard 80 characters
+line_length_80 <- limit_line_length(80)
+
+# Strict 72 characters (for emails, etc.)
+line_length_72 <- limit_line_length(72)
+
+# Lenient 120 characters
+line_length_120 <- limit_line_length(120)
+```
+
+## Building a Team Style Guide
+
+Combine multiple linters for a comprehensive style guide:
+
+```{r eval=FALSE}
+# Define your team's rules
+my_team_style <- lintr::linters_with_defaults(
+  # No T/F
+  no_t_f = forbid_symbols(c("T", "F"), "Use TRUE/FALSE")(),
+
+  # Require snake_case
+  snake_case = require_naming_pattern(
+    "^[a-z][a-z0-9_]*$",
+    "Use snake_case"
+  )(),
+
+  # Prefer <-
+  use_arrow = enforce_assignment_operator("<-")(),
+
+  # Ban dangerous functions
+  no_attach = forbid_functions("attach", alternatives = "with")(),
+
+  # Ban deprecated apply functions
+  no_sapply = forbid_functions(
+    c("sapply", "mapply"),
+    alternatives = "vapply"
+  )(),
+
+  # Functions must start with verbs
+  verb_functions = require_function_naming_pattern(
+    "^(get|set|calc|check|is|has)",
+    "Functions should start with verbs"
+  )(),
+
+  # Explicit arguments
+  explicit_saf = require_function_arguments(
+    "data.frame",
+    "stringsAsFactors"
+  )(),
+
+  # Line length
+  line_length = limit_line_length(80)()
+)
+
+# Apply to a file
+lintr::lint("script.R", linters = my_team_style)
+
+# Apply to entire package
+lintr::lint_package(linters = my_team_style)
+```
+
+## Testing Your Linters
+
+Use `test_linter()` to verify your linters work correctly:
+
+```{r eval=FALSE}
+my_linter <- forbid_symbols(c("T", "F"), "Use TRUE/FALSE")
+
+# Should lint
+test_linter(my_linter, "x <- T", should_lint = TRUE)
+
+# Should not lint
+test_linter(my_linter, "x <- TRUE", should_lint = FALSE)
+
+# Check exact number of lints
+test_linter(my_linter, "a <- T; b <- F", n_lints = 2)
+
+# Verify message content
+test_linter(
+  my_linter,
+  "x <- T",
+  message_pattern = "TRUE/FALSE"
+)
+```
+
+## When You Need More Power
+
+For complex scenarios that can't be handled by the high-level functions, you can still use XPath-based linters:
+
+```{r eval=FALSE}
+# For advanced users only
+complex_linter <- create_simple_linter(
+  xpath = "//OP-COLON[preceding-sibling::NUM_CONST[text() = '1']]",
+  message = "Use seq_along() instead of 1:length()",
+  linter_name = "no_one_length"
+)
+```
+
+But for 95% of use cases, the high-level functions are all you need!
+
+## Summary
+
+`lintrhelper` makes creating custom linters accessible to everyone:
+
+| Task | Function | XPath Required? |
+|------|----------|-----------------|
+| Ban variables | `forbid_symbols()` | ❌ No |
+| Ban functions | `forbid_functions()` | ❌ No |
+| Naming conventions | `require_naming_pattern()` | ❌ No (just regex) |
+| Function names | `require_function_naming_pattern()` | ❌ No (just regex) |
+| Assignment style | `enforce_assignment_operator()` | ❌ No |
+| Required args | `require_function_arguments()` | ❌ No |
+| Line length | `limit_line_length()` | ❌ No |
+
+Start linting your code today - no XPath knowledge required!
