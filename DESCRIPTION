@@ -2,7 +2,9 @@ Package: lintrhelper
 Type: Package
 Title: Create Custom Lintr Rules Without XPath Knowledge
 Version: 0.1.0
-Authors@R: person("Author", "Name", email = "author@example.com", role = c("aut", "cre"))
+Authors@R: person("Fabian", "Distler",
+    email = "fabiandistler@users.noreply.github.com",
+    role = c("aut", "cre"))
 Description: Simplifies the creation of custom linters for the 'lintr' package
     without requiring XPath or XML knowledge. Provides high-level functions to
     forbid symbols, ban functions, enforce naming conventions, require specific
@@ -10,16 +12,16 @@ Description: Simplifies the creation of custom linters for the 'lintr' package
     testing utilities, and ready-to-use example linters.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Imports:
     lintr (>= 3.0.0),
     xml2,
-    rlang
+    utils
 Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-URL: https://github.com/fabiandistler/lintrhelper
+Config/testthat/edition: 3
+URL: https://github.com/fabiandistler/lintrhelper, https://fabiandistler.github.io/lintrhelper/
 BugReports: https://github.com/fabiandistler/lintrhelper/issues

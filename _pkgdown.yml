@@ -1,0 +1,46 @@
+url: https://fabiandistler.github.io/lintrhelper/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: "High-level linters (no XPath)"
+    desc: >
+      Build linters by describing what you want — no XPath or XML knowledge
+      required.
+    contents:
+      - forbid_symbols
+      - forbid_functions
+      - require_naming_pattern
+      - require_function_naming_pattern
+      - enforce_assignment_operator
+      - require_function_arguments
+      - limit_line_length
+  - title: "Testing utilities"
+    desc: "Verify your linters with minimal boilerplate."
+    contents:
+      - test_linter
+      - quick_test
+  - title: "Advanced (XPath builders)"
+    desc: "Lower-level builders for users who want full XPath control."
+    contents:
+      - create_simple_linter
+      - create_function_call_linter
+      - create_assignment_linter
+      - linter_template
+      - xpath_patterns
+  - title: "Ready-to-use example linters"
+    desc: "Drop-in linters you can use directly or read for inspiration."
+    contents:
+      - no_t_f_linter
+      - no_attach_linter
+      - prefer_arrow_assignment_linter
+      - no_sapply_linter
+      - no_one_length_linter
+
+articles:
+  - title: "Get started"
+    navbar: ~
+    contents:
+      - getting-started
+      - no-xpath-guide

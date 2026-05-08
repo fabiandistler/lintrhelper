@@ -4,3 +4,8 @@
 ^LICENSE\.md$
 ^\.github$
 ^\.git$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^cran-comments\.md$
+^CODE_OF_CONDUCT\.md$
