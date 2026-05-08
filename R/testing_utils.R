@@ -32,6 +32,7 @@
 #' test_linter(my_linter, "x <- T; y <- T", n_lints = 2)
 #' }
 #'
+#' @importFrom utils capture.output
 #' @export
 test_linter <- function(linter,
                         code,

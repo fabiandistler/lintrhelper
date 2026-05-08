@@ -64,7 +64,7 @@ forbid_symbols <- function(symbols,
         )
       })
 
-      unlist(lints, recursive = FALSE)
+      structure(lints, class = "lints")
     })
   }
 }
@@ -193,8 +193,7 @@ require_naming_pattern <- function(pattern,
 
         matches <- grepl(pattern, symbol_name)
 
-        # Invert logic if requested
-        if (invert) !matches else !matches
+        if (invert) matches else !matches
       }, all_symbols)
 
       # Generate lints
@@ -210,7 +209,7 @@ require_naming_pattern <- function(pattern,
         )
       })
 
-      unlist(lints, recursive = FALSE)
+      structure(lints, class = "lints")
     })
   }
 }
@@ -262,7 +261,7 @@ require_function_naming_pattern <- function(pattern,
       bad_nodes <- Filter(function(node) {
         func_name <- xml2::xml_text(node)
         matches <- grepl(pattern, func_name)
-        if (invert) !matches else !matches
+        if (invert) matches else !matches
       }, all_functions)
 
       lints <- lapply(bad_nodes, function(node) {
@@ -277,7 +276,7 @@ require_function_naming_pattern <- function(pattern,
         )
       })
 
-      unlist(lints, recursive = FALSE)
+      structure(lints, class = "lints")
     })
   }
 }
@@ -385,11 +384,12 @@ require_function_arguments <- function(function_name,
       )
 
       bad_calls <- Filter(function(node) {
-        # Get parent expr which contains the full call
-        parent <- xml2::xml_parent(node)
+        # The call expression is the grandparent: SYMBOL_FUNCTION_CALL is wrapped
+        # in an <expr>, which is itself a child of the outer call <expr>.
+        call_expr <- xml2::xml_parent(xml2::xml_parent(node))
 
         # Find named arguments in this call
-        named_args <- xml2::xml_find_all(parent, ".//SYMBOL_SUB")
+        named_args <- xml2::xml_find_all(call_expr, ".//SYMBOL_SUB")
         arg_names <- vapply(named_args, xml2::xml_text, character(1))
 
         # Check if all required args are present
@@ -438,8 +438,12 @@ limit_line_length <- function(max_length = 80,
 
   function() {
     lintr::Linter(function(source_expression) {
-      # Get the actual source lines
-      lines <- source_expression$lines
+      # Only run once per file, using full file lines
+      if (!lintr::is_lint_level(source_expression, "file")) {
+        return(list())
+      }
+
+      lines <- source_expression$file_lines
 
       # Find lines that are too long
       long_lines <- which(nchar(lines) > max_length)
@@ -461,7 +465,7 @@ limit_line_length <- function(max_length = 80,
         )
       })
 
-      lints
+      structure(lints, class = "lints")
     })
   }
 }

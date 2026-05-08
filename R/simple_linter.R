@@ -105,7 +105,7 @@ create_function_call_linter <- function(function_names,
       xml <- source_expression$full_xml_parsed_content
       bad_nodes <- xml2::xml_find_all(xml, xpath)
 
-      # Replace {function} placeholder with actual function name
+      # Replace {function} placeholder with actual function name per node
       lints <- lapply(bad_nodes, function(node) {
         func_name <- xml2::xml_text(node)
         msg <- gsub("\\{function\\}", func_name, message)
@@ -118,7 +118,7 @@ create_function_call_linter <- function(function_names,
         )
       })
 
-      unlist(lints, recursive = FALSE)
+      structure(lints, class = "lints")
     })
   }
 }
@@ -165,11 +165,9 @@ create_assignment_linter <- function(forbidden_operators,
 
   xml_operators <- unique(unlist(operator_map[forbidden_operators]))
 
-  if (length(xml_operators) == 1) {
-    xpath <- sprintf("//expr[%s]", xml_operators)
-  } else {
-    xpath <- sprintf("//expr[%s]", paste(xml_operators, collapse = " or "))
-  }
+  # Match operator nodes directly (their parent depends on operator: <expr> for <-,
+  # <expr_or_assign_or_help> for =, etc.).
+  xpath <- paste(sprintf("//%s", xml_operators), collapse = " | ")
 
   function() {
     lintr::Linter(function(source_expression) {
