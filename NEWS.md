@@ -1,3 +1,10 @@
+# lintrhelper 0.1.0.9000 (development)
+
+* Added GitHub Actions workflow for `R CMD check` across macOS, Windows, and Ubuntu (R devel/release/oldrel-1).
+* Added pkgdown workflow that deploys the documentation site to <https://fabiandistler.github.io/lintrhelper/>.
+* Added `_pkgdown.yml` configuration grouping the reference index by user-facing categories.
+* Cleaned up `DESCRIPTION` author field and added the pkgdown URL.
+
 # lintrhelper 0.1.0
 
 ## Initial Release

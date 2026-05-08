@@ -1,17 +1,41 @@
 # lintrhelper
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/fabiandistler/lintrhelper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fabiandistler/lintrhelper/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://github.com/fabiandistler/lintrhelper/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/fabiandistler/lintrhelper/actions/workflows/pkgdown.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
 > Helper Functions for Creating Custom Lintr Rules - **No XPath Knowledge Required!**
 
 `lintrhelper` makes it incredibly easy to create custom linters for the [lintr](https://lintr.r-lib.org/) package. You don't need to know XPath, XML, or parse trees - just use simple, intuitive functions to describe what you want to lint!
 
+📖 **Documentation site:** <https://fabiandistler.github.io/lintrhelper/>
+
 ## Installation
 
-You can install the development version from GitHub:
+Install the development version from GitHub with either `pak` (recommended) or `devtools`:
 
 ```r
+# install.packages("pak")
+pak::pak("fabiandistler/lintrhelper")
+
+# or
 # install.packages("devtools")
 devtools::install_github("fabiandistler/lintrhelper")
 ```
+
+## Hello World
+
+Three lines to ban `T`/`F` in any R script:
+
+```r
+library(lintrhelper)
+no_t_f <- forbid_symbols(c("T", "F"), "Use TRUE/FALSE instead of {symbol}.")
+lintr::lint("script.R", linters = list(no_t_f()))
+```
+
+That's it. The rest of this README walks through the building blocks.
 
 ## Why lintrhelper?
 
@@ -270,6 +294,7 @@ quick_test("//SYMBOL_FUNCTION_CALL[text() = 'mean']", "x <- mean(y)")
 
 ## Learn More
 
+- [lintrhelper documentation site](https://fabiandistler.github.io/lintrhelper/) — full reference and articles
 - [Creating linters (official lintr guide)](https://lintr.r-lib.org/articles/creating_linters.html)
 - [XPath tutorial](https://www.w3schools.com/xml/xpath_intro.asp)
 - [Understanding R's parse tree](https://github.com/r-lib/lintr#how-it-works)
