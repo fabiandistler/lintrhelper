@@ -1,0 +1,27 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://fabiandistler.github.io/lintrhelper/404.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/LICENSE-text.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/articles/getting-started.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/articles/index.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/articles/no-xpath-guide.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/authors.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/index.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/news/index.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/create_assignment_linter.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/create_function_call_linter.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/create_simple_linter.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/enforce_assignment_operator.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/example_linters.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/forbid_functions.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/forbid_symbols.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/index.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/limit_line_length.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/linter_template.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/quick_test.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_function_arguments.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_function_naming_pattern.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_naming_pattern.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/test_linter.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.html</loc></url>
+</urlset>
+
