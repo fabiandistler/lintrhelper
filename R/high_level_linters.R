@@ -431,20 +431,19 @@ limit_line_length <- function(max_length = 80,
         return(list())
       }
 
-      # Create lints for each long line
-      lints <- lapply(long_lines, function(line_num) {
+      # Create lints for each long line. The `linter` argument of Lint()
+      # is deprecated since lintr 3.0; the framework attaches the linter
+      # name from the surrounding Linter() wrapper.
+      lapply(long_lines, function(line_num) {
         lintr::Lint(
           filename = source_expression$filename,
           line_number = line_num,
           column_number = max_length + 1,
           type = type,
           message = sprintf("%s (currently %d)", message, nchar(lines[line_num])),
-          line = lines[line_num],
-          linter = "limit_line_length"
+          line = lines[line_num]
         )
       })
-
-      structure(lints, class = "lints")
     })
   }
 }
