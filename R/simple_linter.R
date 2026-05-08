@@ -105,20 +105,17 @@ create_function_call_linter <- function(function_names,
       xml <- source_expression$full_xml_parsed_content
       bad_nodes <- xml2::xml_find_all(xml, xpath)
 
-      # Replace {function} placeholder with actual function name per node
-      lints <- lapply(bad_nodes, function(node) {
-        func_name <- xml2::xml_text(node)
-        msg <- gsub("\\{function\\}", func_name, message)
+      # Replace {function} placeholder with each node's function name.
+      messages <- vapply(bad_nodes, function(node) {
+        gsub("\\{function\\}", xml2::xml_text(node), message, fixed = FALSE)
+      }, character(1))
 
-        lintr::xml_nodes_to_lints(
-          node,
-          source_expression = source_expression,
-          lint_message = msg,
-          type = type
-        )
-      })
-
-      structure(lints, class = "lints")
+      lintr::xml_nodes_to_lints(
+        bad_nodes,
+        source_expression = source_expression,
+        lint_message = messages,
+        type = type
+      )
     })
   }
 }

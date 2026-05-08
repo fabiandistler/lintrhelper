@@ -51,20 +51,16 @@ forbid_symbols <- function(symbols,
       xml <- source_expression$full_xml_parsed_content
       bad_nodes <- xml2::xml_find_all(xml, xpath)
 
-      # Custom message per symbol
-      lints <- lapply(bad_nodes, function(node) {
-        symbol_name <- xml2::xml_text(node)
-        msg <- gsub("\\{symbol\\}", symbol_name, message)
+      messages <- vapply(bad_nodes, function(node) {
+        gsub("\\{symbol\\}", xml2::xml_text(node), message, fixed = FALSE)
+      }, character(1))
 
-        lintr::xml_nodes_to_lints(
-          node,
-          source_expression = source_expression,
-          lint_message = msg,
-          type = type
-        )
-      })
-
-      structure(lints, class = "lints")
+      lintr::xml_nodes_to_lints(
+        bad_nodes,
+        source_expression = source_expression,
+        lint_message = messages,
+        type = type
+      )
     })
   }
 }
@@ -179,37 +175,24 @@ require_naming_pattern <- function(pattern,
 
       xml <- source_expression$full_xml_parsed_content
 
-      # Get all symbols (excluding function calls)
       all_symbols <- xml2::xml_find_all(xml, "//SYMBOL")
+      symbol_names <- vapply(all_symbols, xml2::xml_text, character(1))
 
-      # Filter based on pattern
-      bad_nodes <- Filter(function(node) {
-        symbol_name <- xml2::xml_text(node)
+      reserved <- symbol_names %in% c("NA", "NULL", "TRUE", "FALSE", "Inf", "NaN")
+      matches <- grepl(pattern, symbol_names)
+      keep <- if (invert) matches & !reserved else !matches & !reserved
 
-        # Skip common R internals
-        if (symbol_name %in% c("NA", "NULL", "TRUE", "FALSE", "Inf", "NaN")) {
-          return(FALSE)
-        }
+      bad_nodes <- all_symbols[keep]
+      messages <- vapply(symbol_names[keep], function(name) {
+        gsub("{symbol}", name, message, fixed = TRUE)
+      }, character(1), USE.NAMES = FALSE)
 
-        matches <- grepl(pattern, symbol_name)
-
-        if (invert) matches else !matches
-      }, all_symbols)
-
-      # Generate lints
-      lints <- lapply(bad_nodes, function(node) {
-        symbol_name <- xml2::xml_text(node)
-        msg <- gsub("\\{symbol\\}", symbol_name, message)
-
-        lintr::xml_nodes_to_lints(
-          node,
-          source_expression = source_expression,
-          lint_message = msg,
-          type = type
-        )
-      })
-
-      structure(lints, class = "lints")
+      lintr::xml_nodes_to_lints(
+        bad_nodes,
+        source_expression = source_expression,
+        lint_message = messages,
+        type = type
+      )
     })
   }
 }
@@ -257,26 +240,22 @@ require_function_naming_pattern <- function(pattern,
 
       xml <- source_expression$full_xml_parsed_content
       all_functions <- xml2::xml_find_all(xml, "//SYMBOL_FUNCTION_CALL")
+      func_names <- vapply(all_functions, xml2::xml_text, character(1))
 
-      bad_nodes <- Filter(function(node) {
-        func_name <- xml2::xml_text(node)
-        matches <- grepl(pattern, func_name)
-        if (invert) matches else !matches
-      }, all_functions)
+      matches <- grepl(pattern, func_names)
+      keep <- if (invert) matches else !matches
 
-      lints <- lapply(bad_nodes, function(node) {
-        func_name <- xml2::xml_text(node)
-        msg <- gsub("\\{function\\}", func_name, message)
+      bad_nodes <- all_functions[keep]
+      messages <- vapply(func_names[keep], function(name) {
+        gsub("{function}", name, message, fixed = TRUE)
+      }, character(1), USE.NAMES = FALSE)
 
-        lintr::xml_nodes_to_lints(
-          node,
-          source_expression = source_expression,
-          lint_message = msg,
-          type = type
-        )
-      })
-
-      structure(lints, class = "lints")
+      lintr::xml_nodes_to_lints(
+        bad_nodes,
+        source_expression = source_expression,
+        lint_message = messages,
+        type = type
+      )
     })
   }
 }
