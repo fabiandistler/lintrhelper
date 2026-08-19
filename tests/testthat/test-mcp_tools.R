@@ -37,6 +37,28 @@ lint_filenames <- function(result) {
   vapply(result, function(group) group$filename, character(1))
 }
 
+git_quiet <- function(dir, args) {
+  system2("git", c("-C", shQuote(dir), args), stdout = FALSE, stderr = FALSE)
+}
+
+make_git_repo <- function(dir) {
+  git_quiet(dir, "init")
+  git_quiet(dir, c("config", "user.name", "lintrhelper"))
+  git_quiet(dir, c("config", "user.email", "lintrhelper@example.com"))
+  git_quiet(dir, c("config", "commit.gpgsign", "false"))
+  dir
+}
+
+commit_all <- function(dir) {
+  git_quiet(dir, c("add", "--all"))
+  git_quiet(dir, c("commit", "--message", "commit"))
+  dir
+}
+
+skip_without_git <- function() {
+  testthat::skip_if(!nzchar(Sys.which("git")), "git is not on the PATH")
+}
+
 test_that("resolve_project_dir prefers the tool argument", {
   arg <- withr::local_tempdir()
   env <- withr::local_tempdir()
@@ -393,6 +415,325 @@ test_that("lint_project writes nothing to stdout", {
   expect_length(result, 1)
 })
 
+test_that("changed_only narrows the lint to the files git reports as changed", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- add_file(make_project(withr::local_tempdir()), "scratch/bar.R")
+  commit_all(make_git_repo(proj))
+  writeLines("z = 3", file.path(proj, "scratch", "bar.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_equal(
+    lint_filenames(lint_project(proj, changed_only = TRUE)),
+    "scratch/bar.R"
+  )
+})
+
+test_that("changed_only counts untracked and staged files as changed", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  add_file(proj, "scratch/untracked.R")
+  add_file(proj, "scratch/staged.R")
+  git_quiet(proj, c("add", "scratch/staged.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_setequal(
+    lint_filenames(lint_project(proj, changed_only = TRUE)),
+    c("scratch/untracked.R", "scratch/staged.R")
+  )
+})
+
+test_that("changed_only leaves files git ignores out of the lint", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- make_project(withr::local_tempdir())
+  writeLines("ignored/", file.path(proj, ".gitignore"))
+  commit_all(make_git_repo(proj))
+  add_file(proj, "ignored/hidden.R")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_length(lint_project(proj, changed_only = TRUE), 0)
+})
+
+test_that("changed_only lints everything in a repository without commits", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- make_git_repo(make_project(withr::local_tempdir()))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_equal(
+    lint_filenames(lint_project(proj, changed_only = TRUE)),
+    "R/foo.R"
+  )
+})
+
+test_that("changed_only returns an empty result when nothing changed", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  result <- lint_project(proj, changed_only = TRUE)
+
+  expect_type(result, "list")
+  expect_length(result, 0)
+  expect_null(attr(result, "message"))
+})
+
+test_that("changed_only ignores changed files lintr would not lint", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  writeLines("notes", file.path(proj, "README.md"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_length(lint_project(proj, changed_only = TRUE), 0)
+})
+
+test_that("changed_only skips a file the change deleted", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- add_file(make_project(withr::local_tempdir()), "scratch/bar.R")
+  commit_all(make_git_repo(proj))
+  unlink(file.path(proj, "scratch", "bar.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_length(lint_project(proj, changed_only = TRUE), 0)
+})
+
+test_that("changed_only leaves out what a directory lint never walks", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- make_git_repo(make_project(withr::local_tempdir()))
+  add_file(proj, ".github/ci.R")
+  add_file(proj, "renv/activate.R")
+  add_file(proj, "R/.hidden.R")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_equal(
+    lint_filenames(lint_project(proj, changed_only = TRUE)),
+    "R/foo.R"
+  )
+  expect_setequal(
+    lint_filenames(lint_project(proj, changed_only = TRUE)),
+    lint_filenames(lint_project(proj))
+  )
+})
+
+test_that("changed_only ignores a change that is already committed", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  commit_all(add_file(proj, "R/new.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_length(lint_project(proj, changed_only = TRUE), 0)
+  expect_length(lint_project(proj), 2)
+})
+
+test_that("changed_only keeps a package's unlinted directories out", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  pkg <- commit_all(make_git_repo(make_package(withr::local_tempdir())))
+  add_file(pkg, "scratch/bar.R")
+  add_file(pkg, "R/.hidden.R")
+  add_file(pkg, "R/new.R")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_equal(
+    lint_filenames(lint_project(pkg, changed_only = TRUE)),
+    "R/new.R"
+  )
+})
+
+test_that("changed_only reports paths relative to the anchor, not the repo", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  repo <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  add_file(repo, "sub/R/inner.R")
+  writeLines("z = 3", file.path(repo, "R", "foo.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_equal(
+    lint_filenames(lint_project(file.path(repo, "sub"), changed_only = TRUE)),
+    "R/inner.R"
+  )
+})
+
+test_that("changed_only honours the project's .lintr config", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  configured <- commit_all(make_git_repo(make_project(
+    withr::local_tempdir(),
+    lintr_config = "linters: linters_with_defaults(assignment_linter = NULL)"
+  )))
+  plain <- commit_all(make_git_repo(make_project(withr::local_tempdir())))
+  add_file(configured, "R/new.R")
+  add_file(plain, "R/new.R")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_false(
+    "assignment_linter" %in%
+      lint_linters(lint_project(configured, changed_only = TRUE))
+  )
+  expect_true(
+    "assignment_linter" %in%
+      lint_linters(lint_project(plain, changed_only = TRUE))
+  )
+})
+
+test_that("changed_only degrades to a full lint outside a git repository", {
+  skip_if_not_installed("lintr")
+
+  proj <- add_file(make_project(withr::local_tempdir()), "scratch/bar.R")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  result <- lint_project(proj, changed_only = TRUE)
+
+  expect_setequal(lint_filenames(result), c("R/foo.R", "scratch/bar.R"))
+  expect_match(attr(result, "message"), "not a git repository")
+  expect_match(attr(result, "message"), "whole project")
+})
+
+test_that("changed_only degrades when git is not on the PATH", {
+  skip_if_not_installed("lintr")
+  skip_on_os("windows")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA, PATH = "")
+
+  result <- lint_project(proj, changed_only = TRUE)
+
+  expect_equal(lint_filenames(result), "R/foo.R")
+  expect_match(attr(result, "message"), "not on the PATH")
+})
+
+test_that("changed_only degrades when git cannot answer", {
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+  local_mocked_bindings(
+    run_git = function(dir, args) {
+      list(ok = !identical(args[[1]], "diff"), lines = character(0))
+    }
+  )
+
+  result <- lint_project(proj, changed_only = TRUE)
+
+  expect_equal(lint_filenames(result), "R/foo.R")
+  expect_match(attr(result, "message"), "could not report the changed files")
+})
+
+test_that("lint_project lints the whole project unless changed_only is set", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- add_file(make_project(withr::local_tempdir()), "scratch/bar.R")
+  commit_all(make_git_repo(proj))
+  writeLines("z = 3", file.path(proj, "scratch", "bar.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_setequal(
+    lint_filenames(lint_project(proj)),
+    c("R/foo.R", "scratch/bar.R")
+  )
+})
+
+test_that("changed_only rejects a value that is not a flag", {
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_error(lint_project(proj, changed_only = "yes"), "TRUE or FALSE")
+  expect_error(
+    lint_project(proj, changed_only = c(TRUE, TRUE)),
+    "TRUE or FALSE"
+  )
+})
+
+test_that("the payload of a result with nothing to say is bare", {
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  payload <- tool_payload(lint_project(proj))
+
+  expect_null(names(payload))
+  expect_equal(payload[[1]]$filename, "R/foo.R")
+})
+
+test_that("the payload moves a degrade note beside the lints", {
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  payload <- tool_payload(lint_project(proj, changed_only = TRUE))
+
+  expect_named(payload, c("message", "lints"))
+  expect_match(payload$message, "not a git repository")
+  expect_equal(payload$lints[[1]]$filename, "R/foo.R")
+})
+
+test_that("the MCP wrapper passes changed_only through", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- add_file(make_project(withr::local_tempdir()), "scratch/bar.R")
+  commit_all(make_git_repo(proj))
+  writeLines("z = 3", file.path(proj, "scratch", "bar.R"))
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  result <- mcp_lint_project(proj, changed_only = TRUE)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_length(parsed, 1)
+  expect_equal(parsed[[1]]$filename, "scratch/bar.R")
+  expect_setequal(names(parsed[[1]]$lints[[1]]), DIAGNOSTIC_FIELDS)
+})
+
+test_that("the MCP wrapper reports a degraded changed_only beside the lints", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  result <- mcp_lint_project(proj, changed_only = TRUE)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_match(parsed$message, "not a git repository")
+  expect_equal(parsed$lints[[1]]$filename, "R/foo.R")
+  expect_setequal(names(parsed$lints[[1]]$lints[[1]]), DIAGNOSTIC_FIELDS)
+})
+
 test_that("the MCP wrapper serialises project diagnostics as compact JSON", {
   skip_if_not_installed("ellmer")
   skip_if_not_installed("jsonlite")
@@ -458,7 +799,9 @@ test_that("mcp_tools exposes the read-only lint and rule tools", {
     tools[["lint_file"]]@arguments@properties,
     c("path", "project_dir")
   )
-  expect_named(tools[["lint_project"]]@arguments@properties, "dir")
+  lint_project_args <- tools[["lint_project"]]@arguments@properties
+  expect_named(lint_project_args, c("dir", "changed_only"))
+  expect_false(lint_project_args$changed_only@required)
   expect_named(tools[["list_rules"]]@arguments@properties, "tags")
   expect_false(tools[["list_rules"]]@arguments@properties$tags@required)
   expect_named(tools[["explain_rule"]]@arguments@properties, "name")
