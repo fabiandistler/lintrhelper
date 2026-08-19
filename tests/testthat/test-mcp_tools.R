@@ -143,6 +143,34 @@ test_that("lint_file accepts an absolute path", {
   expect_equal(result[[1]]$filename, "R/foo.R")
 })
 
+test_that("lint_file rejects a directory with an actionable message", {
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  expect_error(lint_file("R", project_dir = proj), "directory")
+})
+
+test_that("the MCP wrapper reports failures as tool errors, not crashes", {
+  skip_if_not_installed("ellmer")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  missing <- mcp_lint_file("R/nope.R", project_dir = proj)
+  expect_true(inherits(missing, "ellmer::ContentToolResult"))
+  expect_false(is.null(missing@error))
+  expect_match(
+    asNamespace("ellmer")[["tool_string"]](missing),
+    "File not found"
+  )
+
+  a_directory <- mcp_lint_file("R", project_dir = proj)
+  expect_false(is.null(a_directory@error))
+
+  bad_anchor <- mcp_lint_file("R/foo.R", project_dir = "/no/such/dir")
+  expect_false(is.null(bad_anchor@error))
+})
+
 test_that("lint_file errors on a missing file", {
   proj <- withr::local_tempdir()
   withr::local_envvar(CLAUDE_PROJECT_DIR = NA)

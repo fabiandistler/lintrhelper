@@ -2,9 +2,10 @@
 
 ## New features
 
-* `start_mcp_server()` starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (#11). It exposes a single read-only tool, `lint_file(path, project_dir = NULL)`, which lints one file under the project's own `.lintr` configuration and returns compact diagnostics (`filename`, `line`, `column`, `type`, `message`, `linter`) grouped by file.
-* The project anchor used to resolve both the path and the `.lintr` search chain follows the precedence tool argument, then `CLAUDE_PROJECT_DIR`, then the server process' working directory.
-* `.mcp.json` at the project root registers the server with Claude Code at project scope. It requires lintrhelper to be installed in the R library the `Rscript` on `PATH` sees.
+* `start_mcp_server()` starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (#11). It exposes a single read-only tool, `lint_file(path, project_dir = NULL)`, which lints one file under whichever `.lintr` configuration lintr finds for it and returns compact diagnostics (`filename`, `line`, `column`, `type`, `message`, `linter`) grouped by file.
+* The project anchor follows the precedence tool argument, then `CLAUDE_PROJECT_DIR`, then the server process' working directory. Relative paths resolve against it and lintr runs with it as the working directory; config discovery stays lintr's own upward search from the linted file.
+* Failures the agent can correct itself — an unknown path, a directory instead of a file, a missing project directory — come back as tool errors carrying the message, rather than as JSON-RPC internal errors that clients surface as a hard failure.
+* `.mcp.json` at the project root registers the server with Claude Code at project scope. It launches `Rscript --no-init-file --no-site-file`, since anything an `.Rprofile` prints would arrive ahead of the JSON-RPC handshake and break it. It requires lintrhelper to be installed in the R library the `Rscript` on `PATH` sees.
 * `mcptools` and `ellmer` are Suggests behind an `rlang::check_installed()` gate, so authoring linters does not pull in the MCP stack.
 
 ## Bug fixes

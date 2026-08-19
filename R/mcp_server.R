@@ -3,8 +3,8 @@
 #' Starts a Model Context Protocol (MCP) server over stdio that exposes
 #' lintr diagnostics to coding agents such as Claude Code, Codex, and
 #' opencode. The server currently provides a single read-only tool,
-#' `lint_file`, which lints one R file using the project's own `.lintr`
-#' configuration.
+#' `lint_file`, which lints one R file under whichever `.lintr`
+#' configuration lintr finds for it.
 #'
 #' The function blocks the R process indefinitely and is not intended for
 #' interactive use. Register it with an MCP client instead — see the
@@ -14,8 +14,14 @@
 #' merely write linters need not install the MCP stack. Calling this
 #' function without them raises an installation prompt.
 #'
-#' Only JSON-RPC traffic is written to stdout; diagnostics use
+#' This package writes only JSON-RPC to stdout; its own diagnostics use
 #' [message()] so they land on stderr and cannot corrupt the protocol.
+#' Startup files are outside its control, though: anything an `.Rprofile`
+#' or `Rprofile.site` prints arrives ahead of the handshake and breaks it.
+#' Launch the server with `Rscript --no-init-file --no-site-file`, as the
+#' bundled `.mcp.json` does — `mcptools` itself tells users to put
+#' [mcptools::mcp_session()] in their `.Rprofile`, so the collision is a
+#' live one.
 #'
 #' @return `NULL`, invisibly, once the client closes the connection.
 #'   Called for its side effect: until then the process is blocked serving

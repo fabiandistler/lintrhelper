@@ -15,8 +15,9 @@ mcp_tools <- function() {
       name = "lint_file",
       description = paste(
         "Lint a single R file with lintr and return the resulting diagnostics.",
-        "The project's .lintr configuration is honoured, so the diagnostics",
-        "match what a human running lintr in the same project would see."
+        "lintr discovers the .lintr configuration from the file's own",
+        "directory upwards, so the diagnostics match what a human running",
+        "lintr on that file would see."
       ),
       arguments = list(
         path = ellmer::type_string(
@@ -28,9 +29,10 @@ mcp_tools <- function() {
         ),
         project_dir = ellmer::type_string(
           paste(
-            "Project root used to resolve the path and the .lintr config.",
-            "Defaults to the CLAUDE_PROJECT_DIR environment variable, or the",
-            "working directory of the server process."
+            "Project root that relative paths are resolved against, and the",
+            "working directory lintr runs in. Defaults to the",
+            "CLAUDE_PROJECT_DIR environment variable, or the working",
+            "directory of the server process."
           ),
           required = FALSE
         )
@@ -59,7 +61,12 @@ mcp_tools <- function() {
 #' @keywords internal
 #' @noRd
 mcp_lint_file <- function(path, project_dir = NULL) {
-  ellmer::ContentToolResult(value = lint_file(path, project_dir))
+  tryCatch(
+    ellmer::ContentToolResult(value = lint_file(path, project_dir)),
+    error = function(cnd) {
+      ellmer::ContentToolResult(error = conditionMessage(cnd))
+    }
+  )
 }
 
 
@@ -70,7 +77,12 @@ mcp_lint_file <- function(path, project_dir = NULL) {
 #' `lint_file` tool.
 #'
 #' @param path Path to the R file, absolute or relative to `project_dir`.
-#' @param project_dir Project root. When `NULL`, the `CLAUDE_PROJECT_DIR`
+#' @param project_dir Project root. Relative paths resolve against it and
+#'   lintr runs with it as the working directory, which is what makes the
+#'   `exclusions` in a project's `.lintr` resolve. Config discovery itself
+#'   is lintr's own: it searches upwards from the linted file's directory,
+#'   so an absolute path outside the anchor picks up its own project's
+#'   `.lintr`, not this one. When `NULL`, the `CLAUDE_PROJECT_DIR`
 #'   environment variable is used, falling back to the working directory.
 #'
 #' @return An unnamed list of groups, one per file, each with a `filename`
@@ -90,6 +102,12 @@ lint_file <- function(path, project_dir = NULL) {
 
   if (!file.exists(full_path)) {
     stop(sprintf("File not found: %s", full_path), call. = FALSE)
+  }
+  if (dir.exists(full_path)) {
+    stop(
+      sprintf("Not a file but a directory: %s", full_path),
+      call. = FALSE
+    )
   }
 
   old_dir <- setwd(anchor)

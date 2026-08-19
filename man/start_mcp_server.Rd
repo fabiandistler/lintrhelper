@@ -7,28 +7,34 @@
 start_mcp_server()
 }
 \value{
-`NULL`, invisibly, once the client closes the connection.
-  Called for its side effect: until then the process is blocked serving
-  the protocol.
+\code{NULL}, invisibly, once the client closes the connection.
+Called for its side effect: until then the process is blocked serving
+the protocol.
 }
 \description{
 Starts a Model Context Protocol (MCP) server over stdio that exposes
 lintr diagnostics to coding agents such as Claude Code, Codex, and
 opencode. The server currently provides a single read-only tool,
-`lint_file`, which lints one R file using the project's own `.lintr`
-configuration.
+\code{lint_file}, which lints one R file under whichever \code{.lintr}
+configuration lintr finds for it.
 }
 \details{
 The function blocks the R process indefinitely and is not intended for
 interactive use. Register it with an MCP client instead — see the
-examples for a Claude Code `.mcp.json` entry.
+examples for a Claude Code \code{.mcp.json} entry.
 
-`mcptools` and `ellmer` are only suggested dependencies, so authors who
+\code{mcptools} and \code{ellmer} are only suggested dependencies, so authors who
 merely write linters need not install the MCP stack. Calling this
 function without them raises an installation prompt.
 
-Only JSON-RPC traffic is written to stdout; diagnostics use
-[message()] so they land on stderr and cannot corrupt the protocol.
+This package writes only JSON-RPC to stdout; its own diagnostics use
+\code{\link[=message]{message()}} so they land on stderr and cannot corrupt the protocol.
+Startup files are outside its control, though: anything an \code{.Rprofile}
+or \code{Rprofile.site} prints arrives ahead of the handshake and breaks it.
+Launch the server with \code{Rscript --no-init-file --no-site-file}, as the
+bundled \code{.mcp.json} does — \code{mcptools} itself tells users to put
+\code{\link[mcptools:mcp_session]{mcptools::mcp_session()}} in their \code{.Rprofile}, so the collision is a
+live one.
 }
 \examples{
 \dontrun{
