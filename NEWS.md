@@ -20,6 +20,7 @@
 ## Tooling
 
 * `R CMD check` is clean again: `LICENSE` is now the DCF stub that `MIT + file LICENSE` expects (the full text moved to `LICENSE.md`), and the `{symbol}` / `{function}` placeholders in `@param message` are escaped so `checkRd` no longer reports lost braces.
+* `.Rbuildignore` now covers `AGENTS.md` and `CONTEXT.md`, clearing the remaining "non-standard files at top level" NOTE. Both are agent-facing repo documentation and have no business in the built package.
 * Added GitHub Actions workflow for `R CMD check` across macOS, Windows, and Ubuntu (R devel/release/oldrel-1).
 * Added pkgdown workflow that deploys the documentation site to <https://fabiandistler.github.io/lintrhelper/>.
 * Added `_pkgdown.yml` configuration grouping the reference index by user-facing categories.
