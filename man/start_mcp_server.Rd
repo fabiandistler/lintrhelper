@@ -14,9 +14,10 @@ the protocol.
 \description{
 Starts a Model Context Protocol (MCP) server over stdio that exposes
 lintr diagnostics to coding agents such as Claude Code, Codex, and
-opencode. The server currently provides a single read-only tool,
-\code{lint_file}, which lints one R file under whichever \code{.lintr}
-configuration lintr finds for it.
+opencode. The server currently provides two read-only tools:
+\code{lint_file}, which lints one R file, and \code{lint_project}, which lints a
+whole project or package in one call. Both run under whichever \code{.lintr}
+configuration lintr finds for the code they lint.
 }
 \details{
 The function blocks the R process indefinitely and is not intended for

@@ -2,9 +2,10 @@
 #'
 #' Starts a Model Context Protocol (MCP) server over stdio that exposes
 #' lintr diagnostics to coding agents such as Claude Code, Codex, and
-#' opencode. The server currently provides a single read-only tool,
-#' `lint_file`, which lints one R file under whichever `.lintr`
-#' configuration lintr finds for it.
+#' opencode. The server currently provides two read-only tools:
+#' `lint_file`, which lints one R file, and `lint_project`, which lints a
+#' whole project or package in one call. Both run under whichever `.lintr`
+#' configuration lintr finds for the code they lint.
 #'
 #' The function blocks the R process indefinitely and is not intended for
 #' interactive use. Register it with an MCP client instead — see the
