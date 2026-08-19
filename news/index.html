@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,21 +38,19 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0.9000" id="lintrhelper-0109000-development">lintrhelper 0.1.0.9000 (development)<a class="anchor" aria-label="anchor" href="#lintrhelper-0109000-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.0.9001" id="lintrhelper-0109001-development">lintrhelper 0.1.0.9001 (development)<a class="anchor" aria-label="anchor" href="#lintrhelper-0109001-development"></a></h2>
 <div class="section level3">
-<h3 id="new-features-0-1-0-9000">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-0-9000"></a></h3>
-<ul><li>
-<code><a href="../reference/start_mcp_server.html">start_mcp_server()</a></code> starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (<a href="https://github.com/fabiandistler/lintrhelper/issues/11" class="external-link">#11</a>). It exposes a single read-only tool, <code>lint_file(path, project_dir = NULL)</code>, which lints one file under whichever <code>.lintr</code> configuration lintr finds for it and returns compact diagnostics (<code>filename</code>, <code>line</code>, <code>column</code>, <code>type</code>, <code>message</code>, <code>linter</code>) grouped by file.</li>
-<li>The server also exposes a read-only <code>lint_project(dir = NULL)</code> tool, which lints a whole project in one call instead of the agent walking files one at a time (<a href="https://github.com/fabiandistler/lintrhelper/issues/12" class="external-link">#12</a>). It returns the same per-lint shape and file grouping as <code>lint_file</code>, and a clean project comes back as an empty result rather than an error. A directory holding a <code>DESCRIPTION</code> is linted with <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code>, everything else with <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_dir()</a></code>; the <code>DESCRIPTION</code> check looks at the anchor itself and never upwards, since <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint_package()</a></code> would otherwise walk up and lint an enclosing package instead of the directory asked for.</li>
-<li>The project anchor follows the precedence tool argument, then <code>CLAUDE_PROJECT_DIR</code>, then the server process’ working directory. Relative paths resolve against it and lintr runs with it as the working directory; config discovery stays lintr’s own upward search from the linted file.</li>
-<li>Failures the agent can correct itself — an unknown path, a directory instead of a file, a missing project directory — come back as tool errors carrying the message, rather than as JSON-RPC internal errors that clients surface as a hard failure.</li>
-<li>
-<code>.mcp.json</code> at the project root registers the server with Claude Code at project scope. It launches <code>Rscript --no-init-file --no-site-file</code>, since anything an <code>.Rprofile</code> prints would arrive ahead of the JSON-RPC handshake and break it. It requires lintrhelper to be installed in the R library the <code>Rscript</code> on <code>PATH</code> sees.</li>
-<li>
-<code>mcptools</code> and <code>ellmer</code> are Suggests behind an <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> gate, so authoring linters does not pull in the MCP stack.</li>
+<h3 id="new-features-0-1-0-9001">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-0-9001"></a></h3>
+<ul><li><p><code><a href="../reference/start_mcp_server.html">start_mcp_server()</a></code> starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (<a href="https://github.com/fabiandistler/lintrhelper/issues/11" class="external-link">#11</a>). It exposes a single read-only tool, <code>lint_file(path, project_dir = NULL)</code>, which lints one file under whichever <code>.lintr</code> configuration lintr finds for it and returns compact diagnostics (<code>filename</code>, <code>line</code>, <code>column</code>, <code>type</code>, <code>message</code>, <code>linter</code>) grouped by file.</p></li>
+<li><p>The server also exposes a read-only <code>lint_project(dir = NULL)</code> tool, which lints a whole project in one call instead of the agent walking files one at a time (<a href="https://github.com/fabiandistler/lintrhelper/issues/12" class="external-link">#12</a>). It returns the same per-lint shape and file grouping as <code>lint_file</code>, and a clean project comes back as an empty result rather than an error. A directory holding a <code>DESCRIPTION</code> is linted with <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code>, everything else with <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_dir()</a></code>; the <code>DESCRIPTION</code> check looks at the anchor itself and never upwards, since <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint_package()</a></code> would otherwise walk up and lint an enclosing package instead of the directory asked for.</p></li>
+<li><p>A third read-only tool, <code>list_rules(tags = NULL)</code>, reports the linters <code><a href="https://lintr.r-lib.org/reference/available_linters.html" class="external-link">lintr::available_linters()</a></code> knows about (<a href="https://github.com/fabiandistler/lintrhelper/issues/13" class="external-link">#13</a>), so the agent and the human argue about the same ruleset instead of the agent guessing at rule names. Each rule comes back as name, providing package, and tags — metadata, not a documentation dump. Tags filter as a union: a linter is returned when it carries any one of them, and since lintr tags its own defaults <code>"default"</code>, <code>list_rules("default")</code> is the set that runs without a project <code>.lintr</code>. A tag no linter carries is not an error: the result is empty and carries a message naming the tag alongside the ones that do exist, which is what an agent needs to correct itself in one step rather than retrying blind.</p></li>
+<li><p>The project anchor follows the precedence tool argument, then <code>CLAUDE_PROJECT_DIR</code>, then the server process’ working directory. Relative paths resolve against it and lintr runs with it as the working directory; config discovery stays lintr’s own upward search from the linted file.</p></li>
+<li><p>Failures the agent can correct itself — an unknown path, a directory instead of a file, a missing project directory — come back as tool errors carrying the message, rather than as JSON-RPC internal errors that clients surface as a hard failure.</p></li>
+<li><p><code>.mcp.json</code> at the project root registers the server with Claude Code at project scope. It launches <code>Rscript --no-init-file --no-site-file</code>, since anything an <code>.Rprofile</code> prints would arrive ahead of the JSON-RPC handshake and break it. It requires lintrhelper to be installed in the R library the <code>Rscript</code> on <code>PATH</code> sees.</p></li>
+<li><p><code>mcptools</code> and <code>ellmer</code> are Suggests behind an <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code> gate, so authoring linters does not pull in the MCP stack.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-0-1-0-9000">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-0-9000"></a></h3>
+<h3 id="bug-fixes-0-1-0-9001">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-0-9001"></a></h3>
 <ul><li>
 <code><a href="../reference/forbid_symbols.html">forbid_symbols()</a></code>, <code><a href="../reference/create_function_call_linter.html">create_function_call_linter()</a></code>, <code><a href="../reference/require_naming_pattern.html">require_naming_pattern()</a></code>, and <code><a href="../reference/require_function_naming_pattern.html">require_function_naming_pattern()</a></code> now correctly return multiple lints when several locations match. Previously the per-node messages were assembled with <code>unlist(recursive = FALSE)</code>, which broke the <code>lints</code> object structure and silently dropped all results.</li>
 <li>
@@ -65,7 +63,7 @@
 <code><a href="../reference/limit_line_length.html">limit_line_length()</a></code> is now scoped to the file level (it used to run once per expression and rely on a non-existent <code>$lines</code> field).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="tooling-0-1-0-9000">Tooling<a class="anchor" aria-label="anchor" href="#tooling-0-1-0-9000"></a></h3>
+<h3 id="tooling-0-1-0-9001">Tooling<a class="anchor" aria-label="anchor" href="#tooling-0-1-0-9001"></a></h3>
 <ul><li>
 <code>R CMD check</code> is clean again: <code>LICENSE</code> is now the DCF stub that <code>MIT + file LICENSE</code> expects (the full text moved to <code>LICENSE.md</code>), and the <code>{symbol}</code> / <code>{function}</code> placeholders in <code>@param message</code> are escaped so <code>checkRd</code> no longer reports lost braces.</li>
 <li>

@@ -1,6 +1,6 @@
 # Changelog
 
-## lintrhelper 0.1.0.9000 (development)
+## lintrhelper 0.1.0.9001 (development)
 
 ### New features
 
@@ -13,6 +13,7 @@
   whichever `.lintr` configuration lintr finds for it and returns
   compact diagnostics (`filename`, `line`, `column`, `type`, `message`,
   `linter`) grouped by file.
+
 - The server also exposes a read-only `lint_project(dir = NULL)` tool,
   which lints a whole project in one call instead of the agent walking
   files one at a time
@@ -27,20 +28,38 @@
   since [`lint_package()`](https://lintr.r-lib.org/reference/lint.html)
   would otherwise walk up and lint an enclosing package instead of the
   directory asked for.
+
+- A third read-only tool, `list_rules(tags = NULL)`, reports the linters
+  [`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html)
+  knows about
+  ([\#13](https://github.com/fabiandistler/lintrhelper/issues/13)), so
+  the agent and the human argue about the same ruleset instead of the
+  agent guessing at rule names. Each rule comes back as name, providing
+  package, and tags — metadata, not a documentation dump. Tags filter as
+  a union: a linter is returned when it carries any one of them, and
+  since lintr tags its own defaults `"default"`, `list_rules("default")`
+  is the set that runs without a project `.lintr`. A tag no linter
+  carries is not an error: the result is empty and carries a message
+  naming the tag alongside the ones that do exist, which is what an
+  agent needs to correct itself in one step rather than retrying blind.
+
 - The project anchor follows the precedence tool argument, then
   `CLAUDE_PROJECT_DIR`, then the server process’ working directory.
   Relative paths resolve against it and lintr runs with it as the
   working directory; config discovery stays lintr’s own upward search
   from the linted file.
+
 - Failures the agent can correct itself — an unknown path, a directory
   instead of a file, a missing project directory — come back as tool
   errors carrying the message, rather than as JSON-RPC internal errors
   that clients surface as a hard failure.
+
 - `.mcp.json` at the project root registers the server with Claude Code
   at project scope. It launches `Rscript --no-init-file --no-site-file`,
   since anything an `.Rprofile` prints would arrive ahead of the
   JSON-RPC handshake and break it. It requires lintrhelper to be
   installed in the R library the `Rscript` on `PATH` sees.
+
 - `mcptools` and `ellmer` are Suggests behind an
   [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
   gate, so authoring linters does not pull in the MCP stack.
