@@ -37,6 +37,11 @@ reference:
       - prefer_arrow_assignment_linter
       - no_sapply_linter
       - no_one_length_linter
+  - title: "MCP server"
+    desc: >
+      Expose lintrhelper to coding agents over the Model Context Protocol.
+    contents:
+      - start_mcp_server
 
 articles:
   - title: "Get started"

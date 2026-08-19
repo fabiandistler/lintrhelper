@@ -14,7 +14,7 @@ require_naming_pattern(
 \arguments{
 \item{pattern}{Regular expression pattern that names must match.}
 
-\item{message}{The lint message. Use {symbol} as placeholder.}
+\item{message}{The lint message. Use \{symbol\} as placeholder.}
 
 \item{type}{The lint type. Defaults to "style".}
 

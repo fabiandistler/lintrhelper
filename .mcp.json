@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "lintrhelper": {
+      "type": "stdio",
+      "command": "Rscript",
+      "args": [
+        "--no-init-file",
+        "--no-site-file",
+        "-e",
+        "lintrhelper::start_mcp_server()"
+      ],
+      "env": {}
+    }
+  }
+}

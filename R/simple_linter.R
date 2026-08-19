@@ -4,7 +4,7 @@
 #' It wraps the standard lintr pattern of finding XML nodes and converting them to lints.
 #'
 #' @param xpath A character string containing the XPath expression to match problematic code.
-#' @param message A character string with the lint message to display. Can use {function}
+#' @param message A character string with the lint message to display. Can use \{function\}
 #'   placeholder which will be replaced with the function name if applicable.
 #' @param linter_name A character string naming the linter (used for the lint type).
 #' @param type The type of lint to create. Defaults to "warning". Can be "error", "warning", or "style".
@@ -62,7 +62,7 @@ create_simple_linter <- function(xpath,
 #' This is a common pattern in linting, so this function makes it even easier.
 #'
 #' @param function_names Character vector of function names to lint against.
-#' @param message A character string with the lint message. Use {function} as a
+#' @param message A character string with the lint message. Use \{function\} as a
 #'   placeholder for the actual function name found.
 #' @param linter_name A character string naming the linter.
 #' @param type The type of lint. Defaults to "warning".

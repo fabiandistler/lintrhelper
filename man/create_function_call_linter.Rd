@@ -14,7 +14,7 @@ create_function_call_linter(
 \arguments{
 \item{function_names}{Character vector of function names to lint against.}
 
-\item{message}{A character string with the lint message. Use {function} as a
+\item{message}{A character string with the lint message. Use \{function\} as a
 placeholder for the actual function name found.}
 
 \item{linter_name}{A character string naming the linter.}

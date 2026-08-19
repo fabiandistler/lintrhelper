@@ -9,3 +9,5 @@
 ^pkgdown$
 ^cran-comments\.md$
 ^CODE_OF_CONDUCT\.md$
+^\.mcp\.json$
+^\.claude$

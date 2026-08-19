@@ -14,7 +14,7 @@ require_function_naming_pattern(
 \arguments{
 \item{pattern}{Regular expression that function names must match.}
 
-\item{message}{The lint message. Use {function} as placeholder.}
+\item{message}{The lint message. Use \{function\} as placeholder.}
 
 \item{type}{The lint type. Defaults to "style".}
 

@@ -1,5 +1,13 @@
 # lintrhelper 0.1.0.9000 (development)
 
+## New features
+
+* `start_mcp_server()` starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (#11). It exposes a single read-only tool, `lint_file(path, project_dir = NULL)`, which lints one file under whichever `.lintr` configuration lintr finds for it and returns compact diagnostics (`filename`, `line`, `column`, `type`, `message`, `linter`) grouped by file.
+* The project anchor follows the precedence tool argument, then `CLAUDE_PROJECT_DIR`, then the server process' working directory. Relative paths resolve against it and lintr runs with it as the working directory; config discovery stays lintr's own upward search from the linted file.
+* Failures the agent can correct itself — an unknown path, a directory instead of a file, a missing project directory — come back as tool errors carrying the message, rather than as JSON-RPC internal errors that clients surface as a hard failure.
+* `.mcp.json` at the project root registers the server with Claude Code at project scope. It launches `Rscript --no-init-file --no-site-file`, since anything an `.Rprofile` prints would arrive ahead of the JSON-RPC handshake and break it. It requires lintrhelper to be installed in the R library the `Rscript` on `PATH` sees.
+* `mcptools` and `ellmer` are Suggests behind an `rlang::check_installed()` gate, so authoring linters does not pull in the MCP stack.
+
 ## Bug fixes
 
 * `forbid_symbols()`, `create_function_call_linter()`, `require_naming_pattern()`, and `require_function_naming_pattern()` now correctly return multiple lints when several locations match. Previously the per-node messages were assembled with `unlist(recursive = FALSE)`, which broke the `lints` object structure and silently dropped all results.
@@ -10,11 +18,12 @@
 
 ## Tooling
 
+* `R CMD check` is clean again: `LICENSE` is now the DCF stub that `MIT + file LICENSE` expects (the full text moved to `LICENSE.md`), and the `{symbol}` / `{function}` placeholders in `@param message` are escaped so `checkRd` no longer reports lost braces.
 * Added GitHub Actions workflow for `R CMD check` across macOS, Windows, and Ubuntu (R devel/release/oldrel-1).
 * Added pkgdown workflow that deploys the documentation site to <https://fabiandistler.github.io/lintrhelper/>.
 * Added `_pkgdown.yml` configuration grouping the reference index by user-facing categories.
 * Generated `man/` pages from existing roxygen comments (`R CMD check` previously failed because no Rd files were committed).
-* `DESCRIPTION`: real author, declared `utils` as an import (for `capture.output`), dropped the unused `rlang` import, dropped `LazyData` (no `data/` directory).
+* `DESCRIPTION`: real author, declared `utils` as an import (for `capture.output`), dropped the unused `rlang` import, dropped `LazyData` (no `data/` directory). `rlang` returned as an import with `start_mcp_server()`, which needs `rlang::check_installed()` for its Suggests gate.
 
 # lintrhelper 0.1.0
 

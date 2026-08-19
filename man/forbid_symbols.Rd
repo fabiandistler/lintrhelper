@@ -13,7 +13,7 @@ forbid_symbols(
 \arguments{
 \item{symbols}{Character vector of symbol names to forbid.}
 
-\item{message}{The lint message. Use {symbol} as placeholder for the symbol name.}
+\item{message}{The lint message. Use \{symbol\} as placeholder for the symbol name.}
 
 \item{type}{The lint type. Defaults to "style".}
 }

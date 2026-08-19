@@ -14,7 +14,7 @@ create_simple_linter(
 \arguments{
 \item{xpath}{A character string containing the XPath expression to match problematic code.}
 
-\item{message}{A character string with the lint message to display. Can use {function}
+\item{message}{A character string with the lint message to display. Can use \{function\}
 placeholder which will be replaced with the function name if applicable.}
 
 \item{linter_name}{A character string naming the linter (used for the lint type).}

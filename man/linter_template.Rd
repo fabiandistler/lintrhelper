@@ -12,11 +12,11 @@ linter_template(
 \arguments{
 \item{type}{The type of template to generate. Options include:
 \itemize{
-  \item "simple" - Basic XPath-based linter
-  \item "function_call" - Function call linter
-  \item "assignment" - Assignment pattern linter
-  \item "advanced" - More advanced linter with custom logic
-  \item "all" - Shows all templates
+\item "simple" - Basic XPath-based linter
+\item "function_call" - Function call linter
+\item "assignment" - Assignment pattern linter
+\item "advanced" - More advanced linter with custom logic
+\item "all" - Shows all templates
 }}
 
 \item{cat_output}{Logical. If TRUE (default), prints the template to console.
@@ -24,7 +24,7 @@ If FALSE, returns the template as a character string.}
 }
 \value{
 If cat_output is FALSE, returns the template code as a character string.
-  Otherwise, returns NULL invisibly after printing.
+Otherwise, returns NULL invisibly after printing.
 }
 \description{
 Returns template code for creating different types of linters.
