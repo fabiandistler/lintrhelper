@@ -101,6 +101,34 @@ mcp_tools <- function() {
         open_world_hint = FALSE,
         idempotent_hint = TRUE
       )
+    ),
+    ellmer::tool(
+      mcp_explain_rule,
+      name = "explain_rule",
+      description = paste(
+        "Explain one lintr linter: what it checks and how it is called,",
+        "read from the installed help page. Use it before rewriting code to",
+        "satisfy a lint, so the rewrite follows the rule rather than a guess",
+        "at what the rule wants. The reply carries the linter's title,",
+        "description, usage, and arguments: the part needed to act, not the",
+        "whole man page. A name no linter carries is not an error, the reply",
+        "names the closest matches instead."
+      ),
+      arguments = list(
+        name = ellmer::type_string(
+          paste(
+            "Name of the linter to explain, as it appears in a lint or in",
+            "list_rules, for example \"assignment_linter\"."
+          ),
+          required = TRUE
+        )
+      ),
+      annotations = ellmer::tool_annotations(
+        title = "Explain a lintr rule",
+        read_only_hint = TRUE,
+        open_world_hint = FALSE,
+        idempotent_hint = TRUE
+      )
     )
   )
 }
@@ -380,6 +408,418 @@ normalise_tags <- function(tags) {
 
   tags <- trimws(tags)
   unique(tags[!is.na(tags) & nzchar(tags)])
+}
+
+
+#' MCP Wrapper Around explain_rule
+#'
+#' Wraps [explain_rule()] in an [ellmer::ContentToolResult()] so the rule
+#' documentation reaches the client as compact JSON rather than a deparsed
+#' R list.
+#'
+#' @inheritParams explain_rule
+#'
+#' @return An `ellmer::ContentToolResult` carrying the rule documentation.
+#'
+#' @keywords internal
+#' @noRd
+mcp_explain_rule <- function(name) {
+  tryCatch(
+    ellmer::ContentToolResult(value = explain_rule(name)),
+    error = function(cnd) {
+      ellmer::ContentToolResult(error = conditionMessage(cnd))
+    }
+  )
+}
+
+
+#' Explain a Single lintr Rule
+#'
+#' Reads the installed help page of one linter and returns the part an
+#' agent needs before it rewrites code: what the rule checks, how the
+#' linter is called, and what its arguments do. This is the implementation
+#' behind the MCP `explain_rule` tool.
+#'
+#' The man page is deliberately not returned whole. Examples, the tag
+#' section, and the see-also links are what a human browses; an agent
+#' acting on a lint needs the description and the usage, so those are what
+#' comes back.
+#'
+#' A name no linter carries is not an error, the same way an unknown tag is
+#' not one in [list_rules()]. The result reports `found = FALSE` and names
+#' the closest linters, so a near miss — `"assignment"` for
+#' `"assignment_linter"`, or a typo — is corrected in one step rather than
+#' by retrying blind.
+#'
+#' Deprecated linters are explainable even though [list_rules()] leaves
+#' them out of its listing: a name only turns up in a `.lintr` or an old
+#' lint after it has been deprecated, which is exactly when the agent needs
+#' the help page to say so. The `tags` in the result carry `"deprecated"`.
+#'
+#' @param name Name of the linter to explain, for example
+#'   `"assignment_linter"`.
+#'
+#' @return A list with `found`, `linter`, and, when the linter exists,
+#'   `package`, `tags`, `title`, `description`, `usage`, `arguments` (an
+#'   unnamed list of `name`/`description` pairs), and `help`, the R
+#'   expression that opens the full page. When the linter does not exist,
+#'   `suggestions` and `message` name the closest matches instead. A
+#'   `message` is also present when the linter exists but its package is
+#'   installed without help pages.
+#'
+#' @keywords internal
+#' @noRd
+explain_rule <- function(name) {
+  name <- normalise_rule_name(name)
+
+  available <- lintr::available_linters(exclude_tags = NULL)
+  index <- match(name, as.character(available[["linter"]]))
+
+  if (is.na(index)) {
+    suggestions <- closest_rules(name, as.character(available[["linter"]]))
+
+    return(list(
+      found = FALSE,
+      linter = name,
+      suggestions = as.list(suggestions),
+      message = sprintf(
+        paste(
+          "No linter named \"%s\". Closest matches: %s.",
+          "Call list_rules for the full set."
+        ),
+        name,
+        paste(suggestions, collapse = ", ")
+      )
+    ))
+  }
+
+  package <- as.character(available[["package"]][[index]])
+
+  result <- list(
+    found = TRUE,
+    linter = name,
+    package = package,
+    tags = as.list(as.character(available[["tags"]][[index]]))
+  )
+
+  rd <- rule_help(name, package)
+
+  if (is.null(rd)) {
+    result$message <- sprintf(
+      paste(
+        "%s exists but %s is installed without help pages,",
+        "so only its metadata is available."
+      ),
+      name,
+      package
+    )
+
+    return(result)
+  }
+
+  c(
+    result,
+    list(
+      title = rd_text(rd_section(rd, "\\title"), "\\title"),
+      description = rd_text(rd_section(rd, "\\description"), "\\description"),
+      usage = rd_text(rd_section(rd, "\\usage"), "\\usage"),
+      arguments = rd_arguments(rd_section(rd, "\\arguments")),
+      help = sprintf("?%s::%s", package, name)
+    )
+  )
+}
+
+
+#' Normalise a Requested Rule Name
+#'
+#' Accepts what an MCP client can send for a required string — a character
+#' scalar or a list holding one — and returns a plain string.
+#'
+#' @param name The `name` argument as received.
+#'
+#' @return A length-one character vector.
+#'
+#' @keywords internal
+#' @noRd
+normalise_rule_name <- function(name) {
+  name <- unlist(name, use.names = FALSE)
+
+  if (!is.character(name) || length(name) != 1L || is.na(name)) {
+    stop("`name` must be a single linter name.", call. = FALSE)
+  }
+
+  name <- trimws(name)
+
+  if (!nzchar(name)) {
+    stop("`name` must be a single linter name.", call. = FALSE)
+  }
+
+  name
+}
+
+
+#' Linters Closest to a Name That Does Not Exist
+#'
+#' Ranks the known linters against a name no linter carries. Names that
+#' contain the request as a substring come first — that is the
+#' `"assignment"` for `"assignment_linter"` case, where edit distance alone
+#' ranks poorly — and the rest follow in order of edit distance.
+#'
+#' @param name The requested name.
+#' @param candidates Character vector of known linter names.
+#' @param n Most suggestions to return.
+#'
+#' @return A character vector of at most `n` linter names.
+#'
+#' @keywords internal
+#' @noRd
+closest_rules <- function(name, candidates, n = 5L) {
+  if (length(candidates) == 0L) {
+    return(character(0))
+  }
+
+  needle <- tolower(name)
+  haystack <- tolower(candidates)
+
+  contained <- sort(candidates[
+    startsWith(haystack, needle) | startsWith(needle, haystack)
+  ])
+  substrings <- sort(candidates[grepl(needle, haystack, fixed = TRUE)])
+  distances <- utils::adist(needle, haystack)[1L, ]
+  nearest <- candidates[order(distances, candidates)]
+
+  utils::head(unique(c(contained, substrings, nearest)), n)
+}
+
+
+#' Find the Help Page Documenting a Linter
+#'
+#' @param name Linter name.
+#' @param package Package providing the linter.
+#'
+#' @return The parsed `Rd` object whose aliases contain `name`, or `NULL`
+#'   when the package ships no help database or documents no such alias.
+#'
+#' @keywords internal
+#' @noRd
+rule_help <- function(name, package) {
+  db <- tryCatch(
+    tools::Rd_db(package),
+    error = function(cnd) NULL,
+    warning = function(cnd) NULL
+  )
+
+  if (length(db) == 0L) {
+    return(NULL)
+  }
+
+  for (rd in db) {
+    if (name %in% rd_aliases(rd)) {
+      return(rd)
+    }
+  }
+
+  NULL
+}
+
+
+#' Aliases of a Parsed Help Page
+#'
+#' @param rd A parsed `Rd` object.
+#'
+#' @return A character vector of the page's `\alias` entries.
+#'
+#' @keywords internal
+#' @noRd
+rd_aliases <- function(rd) {
+  aliases <- rd[rd_tags(rd) == "\\alias"]
+
+  vapply(
+    aliases,
+    function(alias) trimws(paste0(unlist(alias), collapse = "")),
+    character(1)
+  )
+}
+
+
+#' Section Tags of a Parsed Help Page
+#'
+#' @param rd A parsed `Rd` object, or any list of Rd fragments.
+#'
+#' @return A character vector of Rd tags, one per element.
+#'
+#' @keywords internal
+#' @noRd
+rd_tags <- function(rd) {
+  vapply(
+    rd,
+    function(part) {
+      tag <- attr(part, "Rd_tag")
+      if (is.null(tag)) NA_character_ else tag
+    },
+    character(1)
+  )
+}
+
+
+#' One Section of a Parsed Help Page
+#'
+#' @param rd A parsed `Rd` object.
+#' @param tag The Rd tag to extract, for example `"\\description"`.
+#'
+#' @return The first matching section, or `NULL` when the page has none.
+#'
+#' @keywords internal
+#' @noRd
+rd_section <- function(rd, tag) {
+  index <- which(rd_tags(rd) == tag)
+
+  if (length(index) == 0L) {
+    return(NULL)
+  }
+
+  rd[[index[[1L]]]]
+}
+
+
+#' Render an Rd Fragment as Plain Text
+#'
+#' Wraps the fragment in a minimal help page and hands it to
+#' [tools::Rd2txt()], which is what turns `\code{}`, `\link{}`, and item
+#' lists into readable prose. The synthetic title and the section heading
+#' `Rd2txt()` prints are then stripped back off, along with the indent it
+#' adds, leaving the section's own text.
+#'
+#' The fragment is rendered under its own tag rather than a generic one so
+#' `\usage` keeps its verbatim line breaks instead of being reflowed as
+#' prose.
+#'
+#' @param fragment An Rd fragment, or `NULL`.
+#' @param tag The Rd tag to render the fragment under.
+#'
+#' @return A single string, or `NULL` when `fragment` is `NULL` or renders
+#'   to nothing.
+#'
+#' @keywords internal
+#' @noRd
+rd_text <- function(fragment, tag) {
+  if (is.null(fragment)) {
+    return(NULL)
+  }
+
+  placeholder <- function(section) {
+    structure(list(structure("x", Rd_tag = "TEXT")), Rd_tag = section)
+  }
+
+  # \title is the one section Rd2txt prints without a heading, so the
+  # page's own title would be indistinguishable from the synthetic one.
+  # Rendering it as prose instead keeps the stripping below uniform.
+  rendered_as <- if (identical(tag, "\\title")) "\\description" else tag
+
+  page <- structure(
+    list(
+      placeholder("\\name"),
+      placeholder("\\title"),
+      structure(drop_rd_sexpr(fragment), Rd_tag = rendered_as)
+    ),
+    class = "Rd"
+  )
+
+  file <- tempfile()
+  on.exit(unlink(file), add = TRUE)
+
+  tools::Rd2txt(
+    page,
+    out = file,
+    options = list(underline_titles = FALSE, width = 76L)
+  )
+
+  lines <- sub("[[:space:]]+$", "", readLines(file, warn = FALSE))
+
+  # Drop the synthetic title, then the section heading, then the blank
+  # lines around either of them.
+  lines <- drop_leading_blanks(lines[-1L])
+  lines <- drop_leading_blanks(lines[-1L])
+
+  while (length(lines) > 0L && !nzchar(lines[[length(lines)]])) {
+    lines <- lines[-length(lines)]
+  }
+
+  if (length(lines) == 0L) {
+    return(NULL)
+  }
+
+  indents <- nchar(sub("[^ ].*$", "", lines[nzchar(lines)]))
+  lines <- substring(lines, min(indents) + 1L)
+
+  paste(lines, collapse = "\n")
+}
+
+
+#' Replace \Sexpr Nodes With a Pointer to the Help Page
+#'
+#' Help pages can build part of their text by running R code at render
+#' time. [tools::Rd_db()] hands back that code unevaluated, and rendering
+#' it would leak markup such as `\Sexpr[stage=render]{pkg:::helper}` into
+#' the reply — or, worse, invite the agent to run a package's internals.
+#' The node is replaced by a pointer to the page instead.
+#'
+#' @param x An Rd fragment, or any node inside one.
+#'
+#' @return `x` with every `\Sexpr` node replaced by plain text.
+#'
+#' @keywords internal
+#' @noRd
+drop_rd_sexpr <- function(x) {
+  if (identical(attr(x, "Rd_tag"), "\\Sexpr")) {
+    return(structure("(see the full help page)", Rd_tag = "TEXT"))
+  }
+
+  if (is.list(x)) {
+    attributes_of_x <- attributes(x)
+    x <- lapply(x, drop_rd_sexpr)
+    attributes(x) <- attributes_of_x
+  }
+
+  x
+}
+
+
+drop_leading_blanks <- function(lines) {
+  while (length(lines) > 0L && !nzchar(lines[[1L]])) {
+    lines <- lines[-1L]
+  }
+
+  lines
+}
+
+
+#' Argument Documentation of a Help Page
+#'
+#' @param fragment The page's `\arguments` section, or `NULL`.
+#'
+#' @return An unnamed list of arguments, each with `name` and
+#'   `description`. Empty when the linter takes no arguments.
+#'
+#' @keywords internal
+#' @noRd
+rd_arguments <- function(fragment) {
+  if (is.null(fragment)) {
+    return(list())
+  }
+
+  items <- fragment[rd_tags(fragment) == "\\item"]
+
+  # An \item in \arguments carries the argument name and its
+  # description, but a page can document a name and leave it at that.
+  unname(lapply(items, function(item) {
+    list(
+      name = trimws(paste0(unlist(item[[1L]]), collapse = "")),
+      description = if (length(item) > 1L) {
+        rd_text(item[[2L]], "\\description")
+      }
+    )
+  }))
 }
 
 

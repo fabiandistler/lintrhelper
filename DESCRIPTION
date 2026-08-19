@@ -16,6 +16,7 @@ Imports:
     lintr (>= 3.0.0),
     rlang,
     xml2,
+    tools,
     utils
 Suggests:
     ellmer,
