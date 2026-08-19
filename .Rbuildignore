@@ -11,3 +11,5 @@
 ^CODE_OF_CONDUCT\.md$
 ^\.mcp\.json$
 ^\.claude$
+^AGENTS\.md$
+^CONTEXT\.md$
