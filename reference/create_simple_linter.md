@@ -24,9 +24,9 @@ create_simple_linter(
 
 - message:
 
-  A character string with the lint message to display. Can use function
-  placeholder which will be replaced with the function name if
-  applicable.
+  A character string with the lint message to display. Can use
+  {function} placeholder which will be replaced with the function name
+  if applicable.
 
 - linter_name:
 

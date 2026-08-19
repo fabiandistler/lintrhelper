@@ -3,6 +3,7 @@
 <url><loc>https://fabiandistler.github.io/lintrhelper/AGENTS.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/CONTEXT.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/LICENSE-text.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/LICENSE.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/articles/getting-started.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/articles/index.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/articles/no-xpath-guide.html</loc></url>
@@ -23,6 +24,7 @@
 <url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_function_arguments.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_function_naming_pattern.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/reference/require_naming_pattern.html</loc></url>
+<url><loc>https://fabiandistler.github.io/lintrhelper/reference/start_mcp_server.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/reference/test_linter.html</loc></url>
 <url><loc>https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.html</loc></url>
 </urlset>

@@ -21,7 +21,7 @@ require_function_naming_pattern(
 
 - message:
 
-  The lint message. Use function as placeholder.
+  The lint message. Use {function} as placeholder.
 
 - type:
 

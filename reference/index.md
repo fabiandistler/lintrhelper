@@ -54,3 +54,10 @@ Drop-in linters you can use directly or read for inspiration.
   [`no_one_length_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
   [`no_sapply_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
   : Example Linters
+
+## MCP server
+
+Expose lintrhelper to coding agents over the Model Context Protocol.
+
+- [`start_mcp_server()`](https://fabiandistler.github.io/lintrhelper/reference/start_mcp_server.md)
+  : Start the lintrhelper MCP Server

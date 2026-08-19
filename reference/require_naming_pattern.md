@@ -22,7 +22,7 @@ require_naming_pattern(
 
 - message:
 
-  The lint message. Use symbol as placeholder.
+  The lint message. Use {symbol} as placeholder.
 
 - type:
 

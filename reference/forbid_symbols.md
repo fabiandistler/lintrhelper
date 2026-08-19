@@ -21,7 +21,7 @@ forbid_symbols(
 
 - message:
 
-  The lint message. Use symbol as placeholder for the symbol name.
+  The lint message. Use {symbol} as placeholder for the symbol name.
 
 - type:
 

@@ -23,7 +23,7 @@ create_function_call_linter(
 
 - message:
 
-  A character string with the lint message. Use function as a
+  A character string with the lint message. Use {function} as a
   placeholder for the actual function name found.
 
 - linter_name:

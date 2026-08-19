@@ -22,7 +22,7 @@ forbid_functions(
 
 - message:
 
-  The lint message. Use function as placeholder.
+  The lint message. Use {function} as placeholder.
 
 - alternatives:
 
