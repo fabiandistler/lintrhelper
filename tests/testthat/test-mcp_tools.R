@@ -445,7 +445,10 @@ test_that("mcp_tools exposes the read-only lint and rule tools", {
   tools <- mcp_tools()
   names(tools) <- vapply(tools, function(tool) tool@name, character(1))
 
-  expect_setequal(names(tools), c("lint_file", "lint_project", "list_rules"))
+  expect_setequal(
+    names(tools),
+    c("lint_file", "lint_project", "list_rules", "explain_rule")
+  )
   expect_true(all(vapply(
     tools,
     function(tool) isTRUE(tool@annotations$read_only_hint),
@@ -458,6 +461,8 @@ test_that("mcp_tools exposes the read-only lint and rule tools", {
   expect_named(tools[["lint_project"]]@arguments@properties, "dir")
   expect_named(tools[["list_rules"]]@arguments@properties, "tags")
   expect_false(tools[["list_rules"]]@arguments@properties$tags@required)
+  expect_named(tools[["explain_rule"]]@arguments@properties, "name")
+  expect_true(tools[["explain_rule"]]@arguments@properties$name@required)
 })
 
 test_that("start_mcp_server gates on the suggested packages", {
@@ -652,5 +657,280 @@ test_that("the MCP wrapper reports a malformed tag filter as a tool error", {
   expect_match(
     asNamespace("ellmer")[["tool_string"]](result),
     "character vector"
+  )
+})
+
+
+test_that("explain_rule returns the documentation of a known linter", {
+  skip_if_not_installed("lintr")
+
+  result <- explain_rule("assignment_linter")
+
+  expect_true(result$found)
+  expect_equal(result$linter, "assignment_linter")
+  expect_equal(result$package, "lintr")
+  expect_true("default" %in% as.character(unlist(result$tags)))
+  expect_match(result$title, "ssignment")
+  expect_match(result$description, "assignment")
+  expect_match(result$usage, "^assignment_linter\\(")
+  expect_equal(result$help, "?lintr::assignment_linter")
+
+  # Which arguments assignment_linter takes is lintr's business and has
+  # changed between releases, so the assertion is that the names come
+  # from the signature rather than that any particular one is there. One
+  # \item can name several arguments at once.
+  documented <- vapply(result$arguments, function(x) x$name, character(1))
+  documented <- trimws(unlist(strsplit(documented, ",", fixed = TRUE)))
+
+  expect_gt(length(documented), 0)
+  expect_true(any(documented %in% names(formals(lintr::assignment_linter))))
+
+  for (argument in result$arguments) {
+    expect_named(argument, c("name", "description"))
+    expect_type(argument$description, "character")
+  }
+})
+
+test_that("explain_rule trims the page to what an agent acts on", {
+  skip_if_not_installed("lintr")
+
+  result <- explain_rule("assignment_linter")
+
+  expect_setequal(
+    names(result),
+    c(
+      "found", "linter", "package", "tags",
+      "title", "description", "usage", "arguments", "help"
+    )
+  )
+
+  # The examples and the see-also links are what a human browses; none of
+  # the rendered sections may carry them.
+  rendered <- paste(
+    c(result$title, result$description, result$usage),
+    collapse = "\n"
+  )
+  expect_no_match(rendered, "Examples")
+  expect_no_match(rendered, "See Also")
+  expect_lt(nchar(rendered), 1000)
+})
+
+test_that("explain_rule covers a linter that takes no arguments", {
+  skip_if_not_installed("lintr")
+
+  result <- explain_rule("T_and_F_symbol_linter")
+
+  expect_true(result$found)
+  expect_match(result$usage, "T_and_F_symbol_linter\\(")
+  expect_equal(result$arguments, list())
+})
+
+test_that("explain_rule explains every linter list_rules reports", {
+  skip_if_not_installed("lintr")
+
+  for (name in rule_names(list_rules("default"))) {
+    result <- explain_rule(name)
+
+    expect_true(result$found)
+    expect_true(nzchar(result$description))
+    expect_true(nzchar(result$usage))
+  }
+})
+
+test_that("explain_rule leaves no unevaluated \\Sexpr markup in the reply", {
+  skip_if_not_installed("lintr")
+
+  # object_name_linter builds part of its argument text at render time,
+  # which tools::Rd_db() hands back unevaluated.
+  result <- explain_rule("object_name_linter")
+  rendered <- paste(unlist(result), collapse = "\n")
+
+  expect_no_match(rendered, "Sexpr", fixed = TRUE)
+  expect_no_match(rendered, ":::", fixed = TRUE)
+})
+
+test_that("an unknown rule name returns the closest matches, not an error", {
+  skip_if_not_installed("lintr")
+
+  result <- expect_no_error(explain_rule("assigment_linter"))
+
+  expect_false(result$found)
+  expect_equal(result$linter, "assigment_linter")
+  expect_true("assignment_linter" %in% as.character(unlist(result$suggestions)))
+  expect_match(result$message, "No linter named \"assigment_linter\"")
+  expect_match(result$message, "assignment_linter")
+  expect_match(result$message, "list_rules")
+  expect_null(result$description)
+})
+
+test_that("a rule name missing its suffix suggests the full linter name", {
+  skip_if_not_installed("lintr")
+
+  result <- explain_rule("assignment")
+
+  expect_false(result$found)
+  expect_equal(
+    as.character(unlist(result$suggestions))[[1]],
+    "assignment_linter"
+  )
+})
+
+test_that("explain_rule suggests something even for a name nothing resembles", {
+  skip_if_not_installed("lintr")
+
+  result <- explain_rule("zzzzzzzzzz")
+
+  expect_false(result$found)
+  expect_length(result$suggestions, 5)
+})
+
+test_that("explain_rule covers deprecated linters list_rules leaves out", {
+  skip_if_not_installed("lintr")
+
+  deprecated <- lintr::available_linters(exclude_tags = NULL)
+  deprecated <- deprecated[
+    vapply(deprecated$tags, function(x) "deprecated" %in% x, logical(1)),
+  ]
+  skip_if(nrow(deprecated) == 0, "this lintr deprecates no linter")
+
+  name <- as.character(deprecated$linter[[1]])
+  result <- explain_rule(name)
+
+  expect_true(result$found)
+  expect_true("deprecated" %in% as.character(unlist(result$tags)))
+  expect_false(name %in% rule_names(list_rules()))
+})
+
+test_that("explain_rule rejects a name that is not a single string", {
+  expect_error(explain_rule(1), "single linter name")
+  expect_error(explain_rule(character(0)), "single linter name")
+  expect_error(explain_rule(c("a", "b")), "single linter name")
+  expect_error(explain_rule(NA_character_), "single linter name")
+  expect_error(explain_rule("  "), "single linter name")
+})
+
+test_that("explain_rule accepts the string an MCP client sends", {
+  skip_if_not_installed("lintr")
+
+  expect_equal(
+    explain_rule(list(" assignment_linter "))$linter,
+    "assignment_linter"
+  )
+})
+
+test_that("explain_rule reports metadata when the help pages are missing", {
+  skip_if_not_installed("lintr")
+
+  local_mocked_bindings(rule_help = function(name, package) NULL)
+
+  result <- explain_rule("assignment_linter")
+
+  expect_true(result$found)
+  expect_equal(result$linter, "assignment_linter")
+  expect_null(result$description)
+  expect_match(result$message, "without help pages")
+})
+
+test_that("explain_rule writes nothing to stdout", {
+  skip_if_not_installed("lintr")
+
+  stdout <- capture.output(result <- explain_rule("assignment_linter"))
+
+  expect_length(stdout, 0)
+  expect_true(result$found)
+})
+
+test_that("closest_rules ranks a prefix ahead of a nearer edit distance", {
+  candidates <- c("assignment_linter", "seq_linter", "any_is_na_linter")
+
+  expect_equal(
+    closest_rules("assignment", candidates)[[1]],
+    "assignment_linter"
+  )
+  expect_equal(closest_rules("seq_lintr", candidates)[[1]], "seq_linter")
+  expect_length(closest_rules("x", candidates), 3)
+  expect_equal(closest_rules("x", character(0)), character(0))
+  expect_length(closest_rules("x", candidates, n = 2), 2)
+})
+
+test_that("rd_text renders a section without its heading or indent", {
+  skip_if_not_installed("lintr")
+
+  rd <- rule_help("assignment_linter", "lintr")
+
+  expect_false(is.null(rd))
+  expect_null(rd_text(NULL, "\\description"))
+  expect_null(rd_section(rd, "\\no_such_section"))
+  description <- rd_text(rd_section(rd, "\\description"), "\\description")
+  expect_no_match(description, "^ ")
+  expect_no_match(rd_text(rd_section(rd, "\\title"), "\\title"), "Description")
+
+  # A usage keeps its own line breaks rather than being reflowed as
+  # prose, which is what makes a wrapped signature readable. The
+  # fragment is built here rather than taken from a linter, whose
+  # signature is lintr's to reformat.
+  signature <- structure(
+    list(structure("f(\n  a = 1,\n  b = 2\n)", Rd_tag = "VERB")),
+    Rd_tag = "\\usage"
+  )
+
+  expect_equal(rd_text(signature, "\\usage"), "f(\n  a = 1,\n  b = 2\n)")
+  expect_no_match(rd_text(signature, "\\description"), "\n  a = 1")
+})
+
+test_that("rule_help returns NULL for a package with no help database", {
+  expect_null(rule_help("assignment_linter", "no_such_package_at_all"))
+})
+
+test_that("the MCP wrapper serialises rule documentation as compact JSON", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  result <- mcp_explain_rule("assignment_linter")
+
+  expect_true(inherits(result, "ellmer::ContentToolResult"))
+  expect_null(result@error)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_true(parsed$found)
+  expect_equal(parsed$linter, "assignment_linter")
+  expect_type(parsed$tags, "list")
+  expect_type(parsed$arguments, "list")
+  expect_setequal(names(parsed$arguments[[1]]), c("name", "description"))
+})
+
+test_that("the MCP wrapper reports an unknown rule as a result, not an error", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  result <- mcp_explain_rule("assigment_linter")
+
+  expect_null(result@error)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_false(parsed$found)
+  expect_type(parsed$suggestions, "list")
+  expect_match(parsed$message, "assignment_linter")
+})
+
+test_that("the MCP wrapper reports a malformed rule name as a tool error", {
+  skip_if_not_installed("ellmer")
+
+  result <- mcp_explain_rule(1)
+
+  expect_false(is.null(result@error))
+  expect_match(
+    asNamespace("ellmer")[["tool_string"]](result),
+    "single linter name"
   )
 })
