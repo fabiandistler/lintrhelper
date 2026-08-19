@@ -439,13 +439,13 @@ test_that("the MCP wrapper reports a bad project dir as a tool error", {
   )
 })
 
-test_that("mcp_tools exposes read-only lint_file and lint_project tools", {
+test_that("mcp_tools exposes the read-only lint and rule tools", {
   skip_if_not_installed("ellmer")
 
   tools <- mcp_tools()
   names(tools) <- vapply(tools, function(tool) tool@name, character(1))
 
-  expect_setequal(names(tools), c("lint_file", "lint_project"))
+  expect_setequal(names(tools), c("lint_file", "lint_project", "list_rules"))
   expect_true(all(vapply(
     tools,
     function(tool) isTRUE(tool@annotations$read_only_hint),
@@ -456,6 +456,8 @@ test_that("mcp_tools exposes read-only lint_file and lint_project tools", {
     c("path", "project_dir")
   )
   expect_named(tools[["lint_project"]]@arguments@properties, "dir")
+  expect_named(tools[["list_rules"]]@arguments@properties, "tags")
+  expect_false(tools[["list_rules"]]@arguments@properties$tags@required)
 })
 
 test_that("start_mcp_server gates on the suggested packages", {
@@ -471,4 +473,184 @@ test_that("check_mcp_deps passes when the suggested packages are installed", {
   skip_if_not_installed("ellmer")
 
   expect_no_error(check_mcp_deps())
+})
+
+
+rule_names <- function(result) {
+  vapply(result$rules, function(rule) rule$linter, character(1))
+}
+
+rule_tags <- function(result, name) {
+  match <- Filter(function(rule) rule$linter == name, result$rules)
+  as.character(unlist(match[[1]]$tags))
+}
+
+test_that("list_rules returns every available linter when unfiltered", {
+  skip_if_not_installed("lintr")
+
+  result <- list_rules()
+  available <- lintr::available_linters()
+
+  expect_named(result, c("count", "rules"))
+  expect_equal(result$count, nrow(available))
+  expect_length(result$rules, nrow(available))
+  expect_setequal(rule_names(result), available$linter)
+
+  for (rule in result$rules) {
+    expect_named(rule, c("linter", "package", "tags"))
+    expect_type(rule$linter, "character")
+    expect_type(rule$package, "character")
+    expect_type(rule$tags, "list")
+  }
+
+  expect_true("assignment_linter" %in% rule_names(result))
+  expect_true("default" %in% rule_tags(result, "assignment_linter"))
+})
+
+test_that("list_rules filters on a single tag", {
+  skip_if_not_installed("lintr")
+
+  result <- list_rules("default")
+  everything <- list_rules()
+
+  expect_null(result$message)
+  expect_gt(result$count, 0)
+  expect_lt(result$count, everything$count)
+  expect_setequal(rule_names(result), names(lintr::default_linters))
+
+  for (rule in result$rules) {
+    expect_true("default" %in% as.character(unlist(rule$tags)))
+  }
+})
+
+test_that("list_rules treats several tags as a union, not an intersection", {
+  skip_if_not_installed("lintr")
+
+  first <- list_rules("style")
+  second <- list_rules("efficiency")
+  both <- list_rules(c("style", "efficiency"))
+
+  expect_setequal(
+    rule_names(both),
+    union(rule_names(first), rule_names(second))
+  )
+  expect_gte(both$count, max(first$count, second$count))
+})
+
+test_that("an unknown tag returns an empty result with a message", {
+  skip_if_not_installed("lintr")
+
+  result <- expect_no_error(list_rules("no_such_tag"))
+
+  expect_equal(result$count, 0)
+  expect_length(result$rules, 0)
+  expect_match(result$message, "no_such_tag")
+  expect_match(result$message, "Available tags")
+  expect_match(result$message, "default")
+})
+
+test_that("an unknown tag alongside a known one keeps the known matches", {
+  skip_if_not_installed("lintr")
+
+  result <- list_rules(c("default", "no_such_tag"))
+
+  expect_setequal(rule_names(result), names(lintr::default_linters))
+  expect_match(
+    result$message,
+    "^No linter carries the tag\\(s\\): no_such_tag\\."
+  )
+})
+
+test_that("list_rules treats an empty or blank filter as no filter", {
+  skip_if_not_installed("lintr")
+
+  everything <- list_rules()
+
+  expect_equal(list_rules(character(0))$count, everything$count)
+  expect_equal(list_rules("")$count, everything$count)
+  expect_equal(list_rules(list())$count, everything$count)
+})
+
+test_that("list_rules accepts the list of strings an MCP client sends", {
+  skip_if_not_installed("lintr")
+
+  expect_setequal(
+    rule_names(list_rules(list("default"))),
+    names(lintr::default_linters)
+  )
+})
+
+test_that("normalise_tags trims, drops blanks, and deduplicates", {
+  expect_equal(normalise_tags(NULL), character(0))
+  expect_equal(normalise_tags(character(0)), character(0))
+  expect_equal(normalise_tags(c("", "  ")), character(0))
+  expect_equal(normalise_tags(c(" style ", "style")), "style")
+  expect_equal(normalise_tags(c("style", NA)), "style")
+  expect_equal(normalise_tags(list("style", "default")), c("style", "default"))
+  expect_error(normalise_tags(1), "character vector")
+})
+
+test_that("list_rules writes nothing to stdout", {
+  skip_if_not_installed("lintr")
+
+  stdout <- capture.output(result <- list_rules("default"))
+
+  expect_length(stdout, 0)
+  expect_gt(result$count, 0)
+})
+
+test_that("the MCP wrapper serialises rule metadata as compact JSON", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  result <- mcp_list_rules("default")
+  expect_true(inherits(result, "ellmer::ContentToolResult"))
+  expect_null(result@error)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_setequal(names(parsed), c("count", "rules"))
+  expect_equal(parsed$count, length(parsed$rules))
+  expect_setequal(names(parsed$rules[[1]]), c("linter", "package", "tags"))
+
+  # Tags stay a JSON array even for a linter carrying exactly one tag,
+  # so the client never has to branch on the shape.
+  for (rule in parsed$rules) {
+    expect_type(rule$tags, "list")
+  }
+})
+
+test_that("the MCP wrapper reports an unknown tag as a result, not an error", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  result <- mcp_list_rules("no_such_tag")
+
+  expect_null(result@error)
+
+  parsed <- jsonlite::fromJSON(
+    asNamespace("ellmer")[["tool_string"]](result),
+    simplifyVector = FALSE
+  )
+
+  expect_equal(parsed$count, 0)
+  expect_length(parsed$rules, 0)
+  expect_match(parsed$message, "no_such_tag")
+})
+
+test_that("the MCP wrapper reports a malformed tag filter as a tool error", {
+  skip_if_not_installed("ellmer")
+
+  result <- mcp_list_rules(1)
+
+  expect_false(is.null(result@error))
+  expect_match(
+    asNamespace("ellmer")[["tool_string"]](result),
+    "character vector"
+  )
 })
