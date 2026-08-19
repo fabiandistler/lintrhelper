@@ -675,8 +675,15 @@ test_that("explain_rule returns the documentation of a known linter", {
   expect_match(result$usage, "^assignment_linter\\(")
   expect_equal(result$help, "?lintr::assignment_linter")
 
-  argument_names <- vapply(result$arguments, function(x) x$name, character(1))
-  expect_true("allow_cascading_assign" %in% argument_names)
+  # Which arguments assignment_linter takes is lintr's business and has
+  # changed between releases, so the assertion is that the names come
+  # from the signature rather than that any particular one is there. One
+  # \item can name several arguments at once.
+  documented <- vapply(result$arguments, function(x) x$name, character(1))
+  documented <- trimws(unlist(strsplit(documented, ",", fixed = TRUE)))
+
+  expect_gt(length(documented), 0)
+  expect_true(any(documented %in% names(formals(lintr::assignment_linter))))
 
   for (argument in result$arguments) {
     expect_named(argument, c("name", "description"))
@@ -858,9 +865,17 @@ test_that("rd_text renders a section without its heading or indent", {
   expect_no_match(description, "^ ")
   expect_no_match(rd_text(rd_section(rd, "\\title"), "\\title"), "Description")
 
-  # The usage keeps its own line breaks rather than being reflowed.
-  usage <- rd_text(rd_section(rd, "\\usage"), "\\usage")
-  expect_match(usage, "\n  allow_cascading_assign")
+  # A usage keeps its own line breaks rather than being reflowed as
+  # prose, which is what makes a wrapped signature readable. The
+  # fragment is built here rather than taken from a linter, whose
+  # signature is lintr's to reformat.
+  signature <- structure(
+    list(structure("f(\n  a = 1,\n  b = 2\n)", Rd_tag = "VERB")),
+    Rd_tag = "\\usage"
+  )
+
+  expect_equal(rd_text(signature, "\\usage"), "f(\n  a = 1,\n  b = 2\n)")
+  expect_no_match(rd_text(signature, "\\description"), "\n  a = 1")
 })
 
 test_that("rule_help returns NULL for a package with no help database", {
