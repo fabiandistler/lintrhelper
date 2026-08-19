@@ -1,5 +1,12 @@
 # lintrhelper 0.1.0.9000 (development)
 
+## New features
+
+* `start_mcp_server()` starts a Model Context Protocol server over stdio so coding agents can ask for lintr diagnostics themselves (#11). It exposes a single read-only tool, `lint_file(path, project_dir = NULL)`, which lints one file under the project's own `.lintr` configuration and returns compact diagnostics (`filename`, `line`, `column`, `type`, `message`, `linter`) grouped by file.
+* The project anchor used to resolve both the path and the `.lintr` search chain follows the precedence tool argument, then `CLAUDE_PROJECT_DIR`, then the server process' working directory.
+* `.mcp.json` at the project root registers the server with Claude Code at project scope. It requires lintrhelper to be installed in the R library the `Rscript` on `PATH` sees.
+* `mcptools` and `ellmer` are Suggests behind an `rlang::check_installed()` gate, so authoring linters does not pull in the MCP stack.
+
 ## Bug fixes
 
 * `forbid_symbols()`, `create_function_call_linter()`, `require_naming_pattern()`, and `require_function_naming_pattern()` now correctly return multiple lints when several locations match. Previously the per-node messages were assembled with `unlist(recursive = FALSE)`, which broke the `lints` object structure and silently dropped all results.
@@ -14,7 +21,7 @@
 * Added pkgdown workflow that deploys the documentation site to <https://fabiandistler.github.io/lintrhelper/>.
 * Added `_pkgdown.yml` configuration grouping the reference index by user-facing categories.
 * Generated `man/` pages from existing roxygen comments (`R CMD check` previously failed because no Rd files were committed).
-* `DESCRIPTION`: real author, declared `utils` as an import (for `capture.output`), dropped the unused `rlang` import, dropped `LazyData` (no `data/` directory).
+* `DESCRIPTION`: real author, declared `utils` as an import (for `capture.output`), dropped the unused `rlang` import, dropped `LazyData` (no `data/` directory). `rlang` returned as an import with `start_mcp_server()`, which needs `rlang::check_installed()` for its Suggests gate.
 
 # lintrhelper 0.1.0
 
