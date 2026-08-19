@@ -4,7 +4,7 @@
 #' certain variable names or enforcing naming conventions.
 #'
 #' @param symbols Character vector of symbol names to forbid.
-#' @param message The lint message. Use {symbol} as placeholder for the symbol name.
+#' @param message The lint message. Use \{symbol\} as placeholder for the symbol name.
 #' @param type The lint type. Defaults to "style".
 #'
 #' @return A linter function.
@@ -72,7 +72,7 @@ forbid_symbols <- function(symbols,
 #' version that doesn't require XPath knowledge.
 #'
 #' @param functions Character vector of function names to forbid.
-#' @param message The lint message. Use {function} as placeholder.
+#' @param message The lint message. Use \{function\} as placeholder.
 #' @param alternatives Optional character vector of alternative functions to suggest.
 #' @param type The lint type. Defaults to "warning".
 #'
@@ -135,7 +135,7 @@ forbid_functions <- function(functions,
 #' No XPath knowledge required - just specify the pattern!
 #'
 #' @param pattern Regular expression pattern that names must match.
-#' @param message The lint message. Use {symbol} as placeholder.
+#' @param message The lint message. Use \{symbol\} as placeholder.
 #' @param type The lint type. Defaults to "style".
 #' @param invert If TRUE, flags names that DO match the pattern (for forbidding patterns).
 #'
@@ -203,7 +203,7 @@ require_naming_pattern <- function(pattern,
 #' Like require_naming_pattern but specifically for function names.
 #'
 #' @param pattern Regular expression that function names must match.
-#' @param message The lint message. Use {function} as placeholder.
+#' @param message The lint message. Use \{function\} as placeholder.
 #' @param type The lint type. Defaults to "style".
 #' @param invert If TRUE, flags names that DO match (for forbidding patterns).
 #'

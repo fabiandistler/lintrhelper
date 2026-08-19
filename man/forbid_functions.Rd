@@ -14,7 +14,7 @@ forbid_functions(
 \arguments{
 \item{functions}{Character vector of function names to forbid.}
 
-\item{message}{The lint message. Use {function} as placeholder.}
+\item{message}{The lint message. Use \{function\} as placeholder.}
 
 \item{alternatives}{Optional character vector of alternative functions to suggest.}
 
