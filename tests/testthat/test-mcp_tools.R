@@ -312,6 +312,28 @@ test_that("lint_project ignores a DESCRIPTION above the anchor", {
   )
 })
 
+test_that("is_package_dir only accepts a DESCRIPTION that names a package", {
+  describe_dir <- function(contents) {
+    dir <- withr::local_tempdir(.local_envir = parent.frame())
+    if (!is.null(contents)) {
+      writeLines(contents, file.path(dir, "DESCRIPTION"))
+    }
+    dir
+  }
+
+  expect_true(is_package_dir(describe_dir(c("Package: probe", "Version: 1"))))
+
+  expect_false(is_package_dir(describe_dir(NULL)))
+  expect_false(is_package_dir(describe_dir(character(0))))
+  expect_false(is_package_dir(describe_dir(c("Version: 1", "Title: X"))))
+  expect_false(is_package_dir(describe_dir(c("Package:", "Version: 1"))))
+  expect_false(is_package_dir(describe_dir(c("not dcf at all", "%%%%"))))
+
+  a_directory <- withr::local_tempdir()
+  dir.create(file.path(a_directory, "DESCRIPTION"))
+  expect_false(is_package_dir(a_directory))
+})
+
 test_that("lint_project honours the project's .lintr config", {
   skip_if_not_installed("lintr")
 
