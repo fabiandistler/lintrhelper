@@ -71,6 +71,36 @@ mcp_tools <- function() {
         open_world_hint = FALSE,
         idempotent_hint = TRUE
       )
+    ),
+    ellmer::tool(
+      mcp_list_rules,
+      name = "list_rules",
+      description = paste(
+        "List the lintr linters available in this installation together with",
+        "their tags, so the agent and the human work from the same ruleset.",
+        "Optionally filter by tag: a linter is returned when it carries any",
+        "of the requested tags, and omitting them lists everything. The",
+        "result is metadata only: linter name, providing package, tags. Read",
+        "the linter's own help page for the prose."
+      ),
+      arguments = list(
+        tags = ellmer::type_array(
+          items = ellmer::type_string(),
+          description = paste(
+            "Tags to filter by, for example \"default\", \"style\", or",
+            "\"best_practices\". A linter matches when it carries any one of",
+            "them. Omit to list every available linter. Unknown tags are",
+            "reported back with the list of tags that do exist."
+          ),
+          required = FALSE
+        )
+      ),
+      annotations = ellmer::tool_annotations(
+        title = "List lintr rules",
+        read_only_hint = TRUE,
+        open_world_hint = FALSE,
+        idempotent_hint = TRUE
+      )
     )
   )
 }
@@ -230,6 +260,126 @@ is_package_dir <- function(dir) {
   )
 
   !is.na(package) && nzchar(package)
+}
+
+
+#' MCP Wrapper Around list_rules
+#'
+#' Wraps [list_rules()] in an [ellmer::ContentToolResult()] so the rule
+#' metadata reaches the client as compact JSON rather than a deparsed R
+#' list.
+#'
+#' @inheritParams list_rules
+#'
+#' @return An `ellmer::ContentToolResult` carrying the rule metadata.
+#'
+#' @keywords internal
+#' @noRd
+mcp_list_rules <- function(tags = NULL) {
+  tryCatch(
+    ellmer::ContentToolResult(value = list_rules(tags)),
+    error = function(cnd) {
+      ellmer::ContentToolResult(error = conditionMessage(cnd))
+    }
+  )
+}
+
+
+#' List the Available lintr Rules
+#'
+#' Returns the linters [lintr::available_linters()] knows about, optionally
+#' narrowed to a set of tags. This is the implementation behind the MCP
+#' `list_rules` tool, and it is what lets an agent see the ruleset before
+#' it starts changing code.
+#'
+#' Only metadata comes back — the linter name, the package providing it,
+#' and its tags. The tags carry more than they look like they do: lintr
+#' tags its default linters `"default"`, so `list_rules("default")` is the
+#' set that runs when a project has no `.lintr` of its own.
+#'
+#' A tag no linter carries is not an error. The result is empty and
+#' `message` names the offending tags alongside the ones that do exist, so
+#' the agent can correct itself in one step instead of guessing.
+#'
+#' @param tags Character vector of tags to filter by, or `NULL`. A linter
+#'   is kept when it carries any one of the tags — the filter is a union,
+#'   not an intersection. `NULL` (or an empty vector) returns every linter.
+#'
+#' @return A list with `count`, the number of linters returned, and
+#'   `rules`, an unnamed list of linters each carrying `linter`, `package`,
+#'   and `tags`. A `message` element is present only when something needs
+#'   saying, currently when a requested tag does not exist.
+#'
+#' @keywords internal
+#' @noRd
+list_rules <- function(tags = NULL) {
+  requested <- normalise_tags(tags)
+
+  available <- lintr::available_linters()
+  all_tags <- sort(unique(unlist(available[["tags"]], use.names = FALSE)))
+  unknown <- setdiff(requested, all_tags)
+  known <- setdiff(requested, unknown)
+
+  if (length(requested) > 0L) {
+    matches <- vapply(
+      available[["tags"]],
+      function(x) any(known %in% x),
+      logical(1)
+    )
+    available <- available[matches, , drop = FALSE]
+  }
+
+  rules <- lapply(seq_len(nrow(available)), function(i) {
+    list(
+      linter = as.character(available[["linter"]][[i]]),
+      package = as.character(available[["package"]][[i]]),
+      tags = as.list(as.character(available[["tags"]][[i]]))
+    )
+  })
+
+  result <- list(count = length(rules), rules = unname(rules))
+
+  if (length(unknown) > 0L) {
+    result$message <- sprintf(
+      "No linter carries the tag(s): %s. Available tags: %s.",
+      paste(unknown, collapse = ", "),
+      paste(all_tags, collapse = ", ")
+    )
+  }
+
+  result
+}
+
+
+#' Normalise a Tag Filter
+#'
+#' Accepts what an MCP client can send for an optional string array —
+#' `NULL`, a character vector, or a list of strings — and returns a plain
+#' character vector. Blanks are dropped so a client sending `""` for "no
+#' filter" is not read as asking for a tag named `""`.
+#'
+#' @param tags The `tags` argument as received.
+#'
+#' @return A unique character vector, empty when no filter was requested.
+#'
+#' @keywords internal
+#' @noRd
+normalise_tags <- function(tags) {
+  if (is.null(tags)) {
+    return(character(0))
+  }
+
+  tags <- unlist(tags, use.names = FALSE)
+
+  if (length(tags) == 0L) {
+    return(character(0))
+  }
+  if (!is.character(tags)) {
+    stop("`tags` must be a character vector of linter tags.", call. = FALSE)
+  }
+
+  tags <- trimws(tags)
+  unique(tags[!is.na(tags) & nzchar(tags)])
 }
 
 
