@@ -29,6 +29,24 @@
   would otherwise walk up and lint an enclosing package instead of the
   directory asked for.
 
+- `lint_project()` takes `changed_only`
+  ([\#15](https://github.com/fabiandistler/lintrhelper/issues/15)): with
+  `changed_only = TRUE` the tool lints only what git reports as changed
+  — the edits in the working tree and the index, plus untracked files —
+  so an agent fixing a branch does not pay for the whole repository on
+  every call. Changes that are already committed stay out; the question
+  asked is what the agent has touched and not finished. The narrowed set
+  is a subset of the full lint: a file lintr does not read, a file the
+  change deleted, a path a directory lint never walks — a `.github/`
+  script, an `renv/` library — and, in a package, anything outside the
+  directories
+  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+  walks all stay out of it, exactly as they stay out of a whole-project
+  lint. A directory git cannot report on — an unversioned one above all
+  — is not an error: it is linted whole and the reply carries a
+  `message` beside the lints saying why. `changed_only = FALSE` remains
+  the default and lints everything, as before.
+
 - A third read-only tool, `list_rules(tags = NULL)`, reports the linters
   [`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html)
   knows about
@@ -42,6 +60,22 @@
   carries is not an error: the result is empty and carries a message
   naming the tag alongside the ones that do exist, which is what an
   agent needs to correct itself in one step rather than retrying blind.
+
+- A fourth read-only tool, `explain_rule(name)`, returns one linter’s
+  documentation
+  ([\#14](https://github.com/fabiandistler/lintrhelper/issues/14)), so
+  an agent rewriting code to satisfy a lint follows the rule rather than
+  its guess at what the rule wants. The reply carries the linter’s
+  title, description, usage, and arguments, read from the installed help
+  page and trimmed to what an agent acts on — the examples, the tag
+  section, and the see-also links are what a human browses and stay out.
+  A name no linter carries is not an error, the same way an unknown tag
+  is not one in `list_rules()`: the result reports `found = FALSE` and
+  names the closest linters, so `"assignment"` or a typo is corrected in
+  one step. Deprecated linters are explainable even though
+  `list_rules()` leaves them out of its listing — a deprecated name only
+  turns up in a `.lintr` or an old lint after the fact, which is exactly
+  when the help page needs to say so.
 
 - The project anchor follows the precedence tool argument, then
   `CLAUDE_PROJECT_DIR`, then the server process’ working directory.
