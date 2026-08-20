@@ -13,6 +13,11 @@
 * `.mcp.json` at the project root registers the server with Claude Code at project scope. It launches `Rscript --no-init-file --no-site-file`, since anything an `.Rprofile` prints would arrive ahead of the JSON-RPC handshake and break it. It requires lintrhelper to be installed in the R library the `Rscript` on `PATH` sees.
 * `mcptools` and `ellmer` are Suggests behind an `rlang::check_installed()` gate, so authoring linters does not pull in the MCP stack.
 
+## Documentation
+
+* The README now takes a colleague from nothing to a working lintr MCP server (#18): installation via `pak` from public GitHub with an internal git-mirror fallback for machines without GitHub access, a check that the `Rscript` on `PATH` sees the package before any config is edited, and the three client registration snippets in the form they were actually verified in — Claude Code `.mcp.json` at project scope on its 30 s default, opencode `opencode.json` with `type: local`, an array `command`, `environment`, and a 60000 ms timeout (#16), and Codex `.codex/config.toml` with `[mcp_servers.lintr]`, `startup_timeout_sec = 20`, and the trusted-project requirement (#17). The differing server names across the snippets are documented as the client-side labels they are, since each client prefixes its tool names with the one it was given. The four shipped tools are tabulated with their arguments, the `mcptools`/`ellmer` Suggests gate is explained together with the way `rlang::check_installed()` fails under a non-interactive `Rscript` launch, and the v0.2 non-goals — team rules package, auto-fix, config/`AGENTS.md` export, CI gate — are stated outright so nobody goes looking for them.
+* `opencode.json` and `.codex/config.toml` are committed at the project root beside the existing `.mcp.json`, so all three registrations are reachable from the repo itself. Both are added to `.Rbuildignore`, keeping the "non-standard files at top level" NOTE away.
+
 ## Bug fixes
 
 * `forbid_symbols()`, `create_function_call_linter()`, `require_naming_pattern()`, and `require_function_naming_pattern()` now correctly return multiple lints when several locations match. Previously the per-node messages were assembled with `unlist(recursive = FALSE)`, which broke the `lints` object structure and silently dropped all results.
