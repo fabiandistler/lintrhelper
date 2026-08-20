@@ -4,10 +4,11 @@
 #' lintr diagnostics to coding agents such as Claude Code, Codex, and
 #' opencode. The server currently provides four read-only tools:
 #' `lint_file`, which lints one R file; `lint_project`, which lints a whole
-#' project or package in one call; `list_rules`, which returns the
-#' available linters and their tags so the agent can see the ruleset before
-#' it starts changing code; and `explain_rule`, which returns one linter's
-#' documentation so a rewrite follows the rule rather than a guess at it.
+#' project or package in one call, or only the files git reports as
+#' changed; `list_rules`, which returns the available linters and their
+#' tags so the agent can see the ruleset before it starts changing code;
+#' and `explain_rule`, which returns one linter's documentation so a
+#' rewrite follows the rule rather than a guess at it.
 #' The two linting tools run under whichever `.lintr` configuration lintr
 #' finds for the code they lint.
 #'
