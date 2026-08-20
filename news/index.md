@@ -98,6 +98,42 @@
   [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
   gate, so authoring linters does not pull in the MCP stack.
 
+### Documentation
+
+- The README now takes a colleague from nothing to a working lintr MCP
+  server
+  ([\#18](https://github.com/fabiandistler/lintrhelper/issues/18)):
+  installation via `pak` from public GitHub with an internal git-mirror
+  fallback for machines without GitHub access, a check that the
+  `Rscript` on `PATH` sees the package before any config is edited, and
+  the three client registration snippets as the repo itself ships them —
+  Claude Code `.mcp.json` at project scope on its 30 s default, opencode
+  `opencode.json` with `type: local`, an array `command`, `environment`,
+  and a 60000 ms timeout
+  ([\#16](https://github.com/fabiandistler/lintrhelper/issues/16)), and
+  Codex `.codex/config.toml` with `[mcp_servers.lintr]`,
+  `startup_timeout_sec = 20`, and the trusted-project requirement
+  ([\#17](https://github.com/fabiandistler/lintrhelper/issues/17)). The
+  differing server names across the snippets are documented as the
+  client-side labels they are, since each client builds its tool names
+  around the one it was given — Claude Code surfaces them as
+  `mcp__lintrhelper__lint_file` and so on. Timings behind the documented
+  timeouts, measured against this repo over stdio: `initialize` answered
+  in 1.3-4.0 s across two machines, `tools/list` shortly after, and a
+  first `lint_file` call back around 8.4 s from launch. The startup
+  timeouts are sized against the first figure; opencode’s `timeout` also
+  has to cover the call, which is what puts its 5000 ms default out of
+  reach. The four shipped tools are tabulated with their arguments, the
+  `mcptools`/`ellmer` Suggests gate is explained together with the way
+  [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html)
+  fails under a non-interactive `Rscript` launch, and the v0.2 non-goals
+  — team rules package, auto-fix, config/`AGENTS.md` export, CI gate —
+  are stated outright so nobody goes looking for them.
+- `opencode.json` and `.codex/config.toml` are committed at the project
+  root beside the existing `.mcp.json`, so all three registrations are
+  reachable from the repo itself. Both are added to `.Rbuildignore`,
+  keeping the “non-standard files at top level” NOTE away.
+
 ### Bug fixes
 
 - [`forbid_symbols()`](https://fabiandistler.github.io/lintrhelper/reference/forbid_symbols.md),

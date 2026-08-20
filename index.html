@@ -62,11 +62,12 @@
 <p>Helper Functions for Creating Custom Lintr Rules - <strong>No XPath Knowledge Required!</strong></p>
 </blockquote>
 <p><code>lintrhelper</code> makes it incredibly easy to create custom linters for the <a href="https://lintr.r-lib.org/" class="external-link">lintr</a> package. You don’t need to know XPath, XML, or parse trees - just use simple, intuitive functions to describe what you want to lint!</p>
+<p>It also ships an <strong>MCP server</strong>, so coding agents — Claude Code, opencode, Codex — can ask for lints themselves and work from the same rules you do. See <a href="#use-it-from-your-coding-agent-mcp-server">Use it from your coding agent</a>.</p>
 <p>📖 <strong>Documentation site:</strong> <a href="https://fabiandistler.github.io/lintrhelper/" class="uri">https://fabiandistler.github.io/lintrhelper/</a></p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the development version from GitHub with either <code>pak</code> (recommended) or <code>devtools</code>:</p>
+<p>Install the development version from GitHub with <code>pak</code> (recommended) or <code>devtools</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"fabiandistler/lintrhelper"</span><span class="op">)</span></span>
@@ -74,12 +75,152 @@
 <span><span class="co"># or</span></span>
 <span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"fabiandistler/lintrhelper"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="on-a-machine-without-github-access">On a machine without GitHub access<a class="anchor" aria-label="anchor" href="#on-a-machine-without-github-access"></a>
+</h3>
+<p>Install from an internal git mirror with the same <code>pak</code> call, pointed at the mirror instead of the public repo:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"git::https://git.internal.example/r-packages/lintrhelper.git"</span><span class="op">)</span></span></code></pre></div>
+<p><code>git.internal.example</code> is a placeholder — substitute your team’s actual mirror host. <code>pak</code> speaks git directly, so nothing beyond credentials for that host is required.</p>
+</div>
+<div class="section level3">
+<h3 id="authoring-only-or-the-mcp-server-too">Authoring only, or the MCP server too?<a class="anchor" aria-label="anchor" href="#authoring-only-or-the-mcp-server-too"></a>
+</h3>
+<p>Writing linters needs nothing but this package. The MCP server additionally needs <code>mcptools</code> and <code>ellmer</code>, which are <strong>Suggests</strong> precisely so that people who only author linters are not made to install the MCP stack:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mcptools"</span>, <span class="st">"ellmer"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/start_mcp_server.html">start_mcp_server()</a></code> gates on both with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. In an interactive session that offers to install them. Under the non-interactive <code>Rscript</code> launch every client below uses it cannot prompt, so it errors instead — the client then reports the server as failing to start, with the real reason on stderr. Installing the two packages up front avoids that entirely.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="use-it-from-your-coding-agent-mcp-server">Use it from your coding agent (MCP server)<a class="anchor" aria-label="anchor" href="#use-it-from-your-coding-agent-mcp-server"></a>
+</h2>
+<p><code>lintrhelper</code> ships an MCP (Model Context Protocol) server, so a coding agent can ask for lints itself instead of a human pasting them into the chat. The agent lints under whichever <code>.lintr</code> configuration your project already has, so it sees the same rules you do.</p>
+<div class="section level3">
+<h3 id="id_1-check-the-interpreter-your-agent-will-launch">1. Check the interpreter your agent will launch<a class="anchor" aria-label="anchor" href="#id_1-check-the-interpreter-your-agent-will-launch"></a>
+</h3>
+<p>Every snippet below starts the server with <code>Rscript</code>. That has to be an <code>Rscript</code> on your <code>PATH</code> whose R library contains <code>lintrhelper</code> — a copy installed into some other library (an IDE’s, an <code>renv</code> project’s) is invisible to it. Confirm this before editing any config:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">--no-init-file</span> <span class="at">--no-site-file</span> <span class="at">-e</span> <span class="st">'packageVersion("lintrhelper")'</span></span></code></pre></div>
+<p>A version number means you are ready. An error means the package is not in that library — install it there.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2-register-the-server-with-your-client">2. Register the server with your client<a class="anchor" aria-label="anchor" href="#id_2-register-the-server-with-your-client"></a>
+</h3>
+<p>All three snippets are committed at this repo’s root, so you can copy one verbatim or just open this repo in your client to try it. Put the snippet at your own project root.</p>
+<p><strong>Claude Code</strong> — <code>.mcp.json</code>, project scope. Its 30 s default startup timeout is ample, so no timeout key is needed:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="dt">"mcpServers"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="dt">"lintrhelper"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>      <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"stdio"</span><span class="fu">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>      <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript"</span><span class="fu">,</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>      <span class="dt">"args"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>        <span class="st">"--no-init-file"</span><span class="ot">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>        <span class="st">"--no-site-file"</span><span class="ot">,</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>        <span class="st">"-e"</span><span class="ot">,</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>        <span class="st">"lintrhelper::start_mcp_server()"</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>      <span class="dt">"env"</span><span class="fu">:</span> <span class="fu">{}</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>opencode</strong> — <code>opencode.json</code>. Note <code>type: "local"</code>, <code>command</code> as an <strong>array</strong> rather than a string, and <code>environment</code> rather than <code>env</code>. The 5000 ms default timeout is too tight once the first lint is added to the R cold start, hence 60000:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="dt">"$schema"</span><span class="fu">:</span> <span class="st">"https://opencode.ai/config.json"</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="dt">"mcp"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="dt">"lintrhelper"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>      <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"local"</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>      <span class="dt">"command"</span><span class="fu">:</span> <span class="ot">[</span><span class="st">"Rscript"</span><span class="ot">,</span> <span class="st">"--no-init-file"</span><span class="ot">,</span> <span class="st">"--no-site-file"</span><span class="ot">,</span> <span class="st">"-e"</span><span class="ot">,</span> <span class="st">"lintrhelper::start_mcp_server()"</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>      <span class="dt">"environment"</span><span class="fu">:</span> <span class="fu">{},</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>      <span class="dt">"timeout"</span><span class="fu">:</span> <span class="dv">60000</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Codex</strong> — <code>.codex/config.toml</code>. Codex reads <strong>TOML, not JSON</strong>: a <code>codex.json</code> is ignored silently, which presents as “nothing happens” rather than as an error. <code>startup_timeout_sec</code> is raised from its default of 10. A project-scoped config only takes effect in a <strong>trusted project</strong>, so trust the project in Codex first:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="kw">[mcp_servers.lintr]</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="dt">command</span> <span class="op">=</span> <span class="st">"Rscript"</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="dt">args</span> <span class="op">=</span> <span class="op">[</span><span class="st">"--no-init-file"</span><span class="op">,</span> <span class="st">"--no-site-file"</span><span class="op">,</span> <span class="st">"-e"</span><span class="op">,</span> <span class="st">"lintrhelper::start_mcp_server()"</span><span class="op">]</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="dt">startup_timeout_sec</span> <span class="op">=</span> <span class="dv">20</span></span></code></pre></div>
+<p>One caveat on this last one: the Claude Code and opencode registrations have been driven against a running server, the Codex one has not. Its shape follows Codex’s documented config format and the file is checked in here, but if it misbehaves you are the first to find out — please open an issue rather than assume you configured it wrong.</p>
+<p>Two things worth knowing about all three:</p>
+<ul>
+<li>
+<strong>The server name is yours to pick.</strong> <code>lintrhelper</code> in the first two snippets and <code>lintr</code> in the Codex one are client-side labels. Each client builds its tool names around the label you gave it, in whatever scheme that client uses — Claude Code shows the tools above as <code>mcp__lintrhelper__lint_file</code> and so on. The labels need not match across clients, and renaming one breaks nothing.</li>
+<li>
+<strong>Keep <code>--no-init-file --no-site-file</code>.</strong> Only JSON-RPC may reach stdout. Anything an <code>.Rprofile</code> or <code>Rprofile.site</code> prints arrives ahead of the handshake and breaks it — and <code>mcptools</code> itself tells users to put <code><a href="https://posit-dev.github.io/mcptools/reference/server.html" class="external-link">mcptools::mcp_session()</a></code> into their <code>.Rprofile</code>, which makes this collision a live one rather than a hypothetical.</li>
+</ul>
+<p>Where the timeout numbers come from: measured against this repo, the server answers <code>initialize</code> in 1.3–4.0 s, and a first <code>lint_file</code> call has come back around 8.4 s after launch — the R cold start plus loading lintr, paid once. The two startup timeouts are sized against the first figure, so Codex’s 20 s and Claude Code’s 30 s default both have room. opencode’s <code>timeout</code> has to cover the tool call as well, and that is what puts its 5000 ms default out of reach and 60000 ms comfortably inside.</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-ask-for-lints">3. Ask for lints<a class="anchor" aria-label="anchor" href="#id_3-ask-for-lints"></a>
+</h3>
+<p>Restart the client so it picks up the config, then ask the agent something like “lint R/mcp_server.R” or “lint this project and fix what it reports”. The agent calls the tools below on its own.</p>
+</div>
+<div class="section level3">
+<h3 id="the-tools">The tools<a class="anchor" aria-label="anchor" href="#the-tools"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Tool</th>
+<th>Arguments</th>
+<th>What it does</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>lint_file</code></td>
+<td>
+<code>path</code> (required), <code>project_dir</code>
+</td>
+<td>Lints one R file under whichever <code>.lintr</code> config lintr finds for it.</td>
+</tr>
+<tr>
+<td><code>lint_project</code></td>
+<td>
+<code>dir</code>, <code>changed_only</code>
+</td>
+<td>Lints a whole project in one call. A directory holding a <code>DESCRIPTION</code> goes through <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code>, everything else through <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_dir()</a></code>. With <code>changed_only = TRUE</code> only the files git reports as changed are linted — working tree, index, and untracked files, but not what is already committed.</td>
+</tr>
+<tr>
+<td><code>list_rules</code></td>
+<td><code>tags</code></td>
+<td>Reports the linters <code><a href="https://lintr.r-lib.org/reference/available_linters.html" class="external-link">lintr::available_linters()</a></code> knows about, as name, providing package, and tags. Tags filter as a union; <code>tags = "default"</code> is the set that runs without a project <code>.lintr</code>.</td>
+</tr>
+<tr>
+<td><code>explain_rule</code></td>
+<td><code>name</code></td>
+<td>Returns one linter’s title, description, usage, and arguments, read from its installed help page — so an agent rewriting code to satisfy a lint follows the rule rather than its guess at the rule.</td>
+</tr>
+</tbody>
+</table>
+<p>None of the four ever writes to your files, and all four carry MCP’s read-only annotation, which is what lets a client call them without stopping for approval.</p>
+<p>The two linting tools return compact diagnostics — <code>filename</code>, <code>line</code>, <code>column</code>, <code>type</code>, <code>message</code>, <code>linter</code> — grouped by file. A clean file or project comes back empty rather than as an error. Mistakes an agent can correct by itself, such as an unknown path or a directory where a file was expected, come back as tool errors carrying the message, not as JSON-RPC internal errors.</p>
+<p>The project anchor follows the precedence tool argument, then <code>CLAUDE_PROJECT_DIR</code>, then the server process’ working directory. Relative paths resolve against it and lintr runs with it as the working directory; discovering the config itself stays lintr’s own upward search from the linted file.</p>
+</div>
+<div class="section level3">
+<h3 id="not-in-this-release">Not in this release<a class="anchor" aria-label="anchor" href="#not-in-this-release"></a>
+</h3>
+<p>Deliberately out of scope, so nobody goes looking:</p>
+<ul>
+<li>
+<strong>Rule distribution</strong> (the team rules package) — shipping a shared rule set as its own versioned R package. It arrives once a concrete team rule exists to distribute.</li>
+<li>
+<strong>Auto-fix</strong> — the tools report lints, they never rewrite your code.</li>
+<li>
+<strong>Agent config export</strong> — generating <code>AGENTS.md</code> / <code>CLAUDE.md</code> entries from a rule set.</li>
+<li>
+<strong>CI gate</strong> — no workflow that fails a build on lints.</li>
+</ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="hello-world">Hello World<a class="anchor" aria-label="anchor" href="#hello-world"></a>
 </h2>
 <p>Three lines to ban <code>T</code>/<code>F</code> in any R script:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/fabiandistler/lintrhelper" class="external-link">lintrhelper</a></span><span class="op">)</span></span>
 <span><span class="va">no_t_f</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/forbid_symbols.html">forbid_symbols</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"T"</span>, <span class="st">"F"</span><span class="op">)</span>, <span class="st">"Use TRUE/FALSE instead of {symbol}."</span><span class="op">)</span></span>
 <span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"script.R"</span>, linters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu">no_t_f</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -97,7 +238,7 @@
 <div class="section level3">
 <h3 id="forbid-specific-symbolsvariables">Forbid Specific Symbols/Variables<a class="anchor" aria-label="anchor" href="#forbid-specific-symbolsvariables"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/fabiandistler/lintrhelper" class="external-link">lintrhelper</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Ban T and F - just list them!</span></span>
@@ -116,7 +257,7 @@
 <div class="section level3">
 <h3 id="forbid-specific-functions">Forbid Specific Functions<a class="anchor" aria-label="anchor" href="#forbid-specific-functions"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Ban dangerous functions - just name them!</span></span>
 <span><span class="va">no_attach</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/forbid_functions.html">forbid_functions</a></span><span class="op">(</span></span>
 <span>  <span class="st">"attach"</span>,</span>
@@ -138,7 +279,7 @@
 <div class="section level3">
 <h3 id="enforce-naming-conventions">Enforce Naming Conventions<a class="anchor" aria-label="anchor" href="#enforce-naming-conventions"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Require snake_case - just give a regex pattern!</span></span>
 <span><span class="va">snake_case</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/require_naming_pattern.html">require_naming_pattern</a></span><span class="op">(</span></span>
 <span>  <span class="st">"^[a-z][a-z0-9_]*$"</span>,</span>
@@ -151,7 +292,7 @@
 <div class="section level3">
 <h3 id="enforce-assignment-style">Enforce Assignment Style<a class="anchor" aria-label="anchor" href="#enforce-assignment-style"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Prefer &lt;- (the most common style)</span></span>
 <span><span class="va">use_arrow</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/enforce_assignment_operator.html">enforce_assignment_operator</a></span><span class="op">(</span><span class="st">"&lt;-"</span><span class="op">)</span></span>
 <span></span>
@@ -227,7 +368,7 @@
 <div class="section level3">
 <h3 id="view-templates">View Templates<a class="anchor" aria-label="anchor" href="#view-templates"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># See all available templates</span></span>
 <span><span class="fu"><a href="reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span>
 <span></span>
@@ -238,7 +379,7 @@
 <div class="section level3">
 <h3 id="xpath-reference">XPath Reference<a class="anchor" aria-label="anchor" href="#xpath-reference"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># View common XPath patterns</span></span>
 <span><span class="fu"><a href="reference/xpath_patterns.html">xpath_patterns</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -253,7 +394,7 @@
 <div class="section level3">
 <h3 id="ban-single-letter-variables">Ban Single-Letter Variables<a class="anchor" aria-label="anchor" href="#ban-single-letter-variables"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># No XPath needed - just list the letters!</span></span>
 <span><span class="va">no_single_letters</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/forbid_symbols.html">forbid_symbols</a></span><span class="op">(</span></span>
 <span>  <span class="va">letters</span>,  <span class="co"># a, b, c, ..., z</span></span>
@@ -266,7 +407,7 @@
 <div class="section level3">
 <h3 id="enforce-function-naming-convention">Enforce Function Naming Convention<a class="anchor" aria-label="anchor" href="#enforce-function-naming-convention"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Functions should start with verbs</span></span>
 <span><span class="va">verb_functions</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/require_function_naming_pattern.html">require_function_naming_pattern</a></span><span class="op">(</span></span>
 <span>  <span class="st">"^(get|set|calculate|compute|check|is|has|create|update|delete|find|load|save)"</span>,</span>
@@ -279,7 +420,7 @@
 <div class="section level3">
 <h3 id="forbid-temp-in-names">Forbid “temp” in Names<a class="anchor" aria-label="anchor" href="#forbid-temp-in-names"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Use invert=TRUE to forbid patterns that DO match</span></span>
 <span><span class="va">no_temp_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/require_naming_pattern.html">require_naming_pattern</a></span><span class="op">(</span></span>
 <span>  <span class="st">"temp"</span>,</span>
@@ -293,7 +434,7 @@
 <div class="section level3">
 <h3 id="require-explicit-arguments">Require Explicit Arguments<a class="anchor" aria-label="anchor" href="#require-explicit-arguments"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Always specify stringsAsFactors</span></span>
 <span><span class="va">explicit_saf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/require_function_arguments.html">require_function_arguments</a></span><span class="op">(</span></span>
 <span>  <span class="st">"data.frame"</span>,</span>
@@ -314,7 +455,7 @@
 <div class="section level3">
 <h3 id="team-style-guide-example">Team Style Guide Example<a class="anchor" aria-label="anchor" href="#team-style-guide-example"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Combine multiple rules for your team</span></span>
 <span><span class="va">my_team_linters</span> <span class="op">&lt;-</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/linters_with_defaults.html" class="external-link">linters_with_defaults</a></span><span class="op">(</span></span>
 <span>  no_t_f <span class="op">=</span> <span class="fu"><a href="reference/forbid_symbols.html">forbid_symbols</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"T"</span>, <span class="st">"F"</span><span class="op">)</span>, <span class="st">"Use TRUE/FALSE"</span><span class="op">)</span><span class="op">(</span><span class="op">)</span>,</span>
@@ -332,7 +473,7 @@
 <h2 id="testing-your-linters">Testing Your Linters<a class="anchor" aria-label="anchor" href="#testing-your-linters"></a>
 </h2>
 <p>The <code><a href="reference/test_linter.html">test_linter()</a></code> function provides several ways to verify your linters:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">my_linter</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_simple_linter.html">create_simple_linter</a></span><span class="op">(</span></span>
 <span>  xpath <span class="op">=</span> <span class="st">"//SYMBOL[text() = 'T']"</span>,</span>
 <span>  message <span class="op">=</span> <span class="st">"Don't use T"</span>,</span>
@@ -358,7 +499,7 @@
 <h2 id="quick-xpath-testing">Quick XPath Testing<a class="anchor" aria-label="anchor" href="#quick-xpath-testing"></a>
 </h2>
 <p>When developing XPath expressions, use <code><a href="reference/quick_test.html">quick_test()</a></code>:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test if your XPath matches what you expect</span></span>
 <span><span class="fu"><a href="reference/quick_test.html">quick_test</a></span><span class="op">(</span><span class="st">"//SYMBOL[text() = 'T']"</span>, <span class="st">"x &lt;- T"</span><span class="op">)</span></span>
 <span><span class="co"># Found 1 lint(s):</span></span>
