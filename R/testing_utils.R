@@ -122,10 +122,10 @@ quick_test <- function(xpath, code, message = "Found match") {
   lints <- lintr::lint(text = code, linters = temp_linter())
 
   if (length(lints) > 0) {
-    cat("Found", length(lints), "lint(s):\n")
+    message(sprintf("Found %d lint(s):", length(lints)))
     print(lints)
   } else {
-    cat("No lints found.\n")
+    message("No lints found.")
   }
 
   invisible(lints)

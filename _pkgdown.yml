@@ -27,8 +27,6 @@ reference:
       - create_simple_linter
       - create_function_call_linter
       - create_assignment_linter
-      - linter_template
-      - xpath_patterns
   - title: "Ready-to-use example linters"
     desc: "Drop-in linters you can use directly or read for inspiration."
     contents:
