@@ -1,0 +1,4 @@
+[mcp_servers.lintr]
+command = "Rscript"
+args = ["--no-init-file", "--no-site-file", "-e", "lintrhelper::start_mcp_server()"]
+startup_timeout_sec = 20
