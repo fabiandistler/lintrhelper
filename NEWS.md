@@ -1,3 +1,5 @@
+# lintrhelper 0.2.0
+
 # lintrhelper 0.1.0.9001 (development)
 
 ## New features
