@@ -134,6 +134,11 @@ args = ["--no-init-file", "--no-site-file", "-e", "lintrhelper::start_mcp_server
 startup_timeout_sec = 20
 ```
 
+One caveat on this last one: the Claude Code and opencode registrations have been driven
+against a running server, the Codex one has not. Its shape follows Codex's documented
+config format and the file is checked in here, but if it misbehaves you are the first to
+find out — please open an issue rather than assume you configured it wrong.
+
 Two things worth knowing about all three:
 
 - **The server name is yours to pick.** `lintrhelper` in the first two snippets and
