@@ -29,14 +29,6 @@ reference:
       - create_assignment_linter
       - linter_template
       - xpath_patterns
-  - title: "Ready-to-use example linters"
-    desc: "Drop-in linters you can use directly or read for inspiration."
-    contents:
-      - no_t_f_linter
-      - no_attach_linter
-      - prefer_arrow_assignment_linter
-      - no_sapply_linter
-      - no_one_length_linter
   - title: "MCP server"
     desc: >
       Expose lintrhelper to coding agents over the Model Context Protocol.
