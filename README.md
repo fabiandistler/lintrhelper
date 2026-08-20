@@ -80,8 +80,8 @@ library — install it there.
 
 ### 2. Register the server with your client
 
-Each snippet is the form that was actually tested against this repo. Put it at your
-project root.
+All three snippets are committed at this repo's root, so you can copy one verbatim or
+just open this repo in your client to try it. Put the snippet at your own project root.
 
 **Claude Code** — `.mcp.json`, project scope. Its 30 s default startup timeout is
 ample, so no timeout key is needed:
@@ -106,7 +106,7 @@ ample, so no timeout key is needed:
 
 **opencode** — `opencode.json`. Note `type: "local"`, `command` as an **array** rather
 than a string, and `environment` rather than `env`. The 5000 ms default timeout is too
-tight for an R cold start, hence 60000:
+tight once the first lint is added to the R cold start, hence 60000:
 
 ```json
 {
@@ -137,17 +137,21 @@ startup_timeout_sec = 20
 Two things worth knowing about all three:
 
 - **The server name is yours to pick.** `lintrhelper` in the first two snippets and
-  `lintr` in the Codex one are client-side labels. Each client prefixes its tool names
-  with the label you gave it — `lintrhelper__lint_file` in one, `lintr__lint_file` in
-  the other. They need not match across clients, and renaming one breaks nothing.
+  `lintr` in the Codex one are client-side labels. Each client builds its tool names
+  around the label you gave it, in whatever scheme that client uses — Claude Code shows
+  the tools above as `mcp__lintrhelper__lint_file` and so on. The labels need not match
+  across clients, and renaming one breaks nothing.
 - **Keep `--no-init-file --no-site-file`.** Only JSON-RPC may reach stdout. Anything an
   `.Rprofile` or `Rprofile.site` prints arrives ahead of the handshake and breaks it —
   and `mcptools` itself tells users to put `mcptools::mcp_session()` into their
   `.Rprofile`, which makes this collision a live one rather than a hypothetical.
 
-The timeouts have headroom: the server answered `initialize` in 1.3–4.0 s across the
-machines it was measured on, comfortably inside both the 20 s Codex allows and the 60 s
-given to opencode here.
+Where the timeout numbers come from: measured against this repo, the server answers
+`initialize` in 1.3–4.0 s, and a first `lint_file` call has come back around 8.4 s after
+launch — the R cold start plus loading lintr, paid once. The two startup timeouts are
+sized against the first figure, so Codex's 20 s and Claude Code's 30 s default both have
+room. opencode's `timeout` has to cover the tool call as well, and that is what puts its
+5000 ms default out of reach and 60000 ms comfortably inside.
 
 ### 3. Ask for lints
 
@@ -161,11 +165,11 @@ the tools below on its own.
 |---|---|---|
 | `lint_file` | `path` (required), `project_dir` | Lints one R file under whichever `.lintr` config lintr finds for it. |
 | `lint_project` | `dir`, `changed_only` | Lints a whole project in one call. A directory holding a `DESCRIPTION` goes through `lintr::lint_package()`, everything else through `lintr::lint_dir()`. With `changed_only = TRUE` only the files git reports as changed are linted — working tree, index, and untracked files, but not what is already committed. |
-| `list_rules` | `tags` | Reports the linters `lintr::available_linters()` knows about, as name, providing package, and tags. Tags filter as a union; `list_rules("default")` is the set that runs without a project `.lintr`. |
+| `list_rules` | `tags` | Reports the linters `lintr::available_linters()` knows about, as name, providing package, and tags. Tags filter as a union; `tags = "default"` is the set that runs without a project `.lintr`. |
 | `explain_rule` | `name` | Returns one linter's title, description, usage, and arguments, read from its installed help page — so an agent rewriting code to satisfy a lint follows the rule rather than its guess at the rule. |
 
-All four are annotated read-only, so Codex and opencode call them without an approval
-prompt.
+None of the four ever writes to your files, and all four carry MCP's read-only
+annotation, which is what lets a client call them without stopping for approval.
 
 The two linting tools return compact diagnostics — `filename`, `line`, `column`,
 `type`, `message`, `linter` — grouped by file. A clean file or project comes back
@@ -182,10 +186,10 @@ upward search from the linted file.
 
 Deliberately out of scope, so nobody goes looking:
 
-- **Team rules package** — distributing a shared rule set as its own versioned R
-  package. It arrives once a concrete team rule exists to distribute.
+- **Rule distribution** (the team rules package) — shipping a shared rule set as its own
+  versioned R package. It arrives once a concrete team rule exists to distribute.
 - **Auto-fix** — the tools report lints, they never rewrite your code.
-- **Config / `AGENTS.md` export** — generating instruction-file entries from a rule set.
+- **Agent config export** — generating `AGENTS.md` / `CLAUDE.md` entries from a rule set.
 - **CI gate** — no workflow that fails a build on lints.
 
 ## Hello World
