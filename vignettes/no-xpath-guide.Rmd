@@ -94,6 +94,11 @@ prefer_tidyverse <- forbid_functions(
 
 **Use case**: Require snake_case, camelCase, or other patterns
 
+Names are checked where they are *defined* — an assignment, a function
+argument — so a badly named variable is reported once, at its definition,
+rather than at every place it is used. `invert = TRUE` turns the pattern
+around: the name is flagged when the pattern matches it.
+
 ```{r eval=FALSE}
 # Require snake_case for variables
 snake_case <- require_naming_pattern(
@@ -312,5 +317,14 @@ But for 95% of use cases, the high-level functions are all you need!
 | Assignment style | `enforce_assignment_operator()` | ❌ No |
 | Required args | `require_function_arguments()` | ❌ No |
 | Line length | `limit_line_length()` | ❌ No |
+
+Four of these are thin wrappers over a lintr linter —
+`forbid_functions()` over `lintr::undesirable_function_linter()`,
+`require_naming_pattern()` over `lintr::object_name_linter()`,
+`enforce_assignment_operator()` over `lintr::assignment_linter()`, and
+`limit_line_length()` over `lintr::line_length_linter()`. They give you
+the rule in the terms of the rule, and leave the finding to lintr. When a
+lintr linter already says what you mean, reach for it directly;
+`lintr::available_linters()` lists them.
 
 Start linting your code today - no XPath knowledge required!
