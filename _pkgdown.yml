@@ -27,8 +27,6 @@ reference:
       - create_simple_linter
       - create_function_call_linter
       - create_assignment_linter
-      - linter_template
-      - xpath_patterns
   - title: "MCP server"
     desc: >
       Expose lintrhelper to coding agents over the Model Context Protocol.
