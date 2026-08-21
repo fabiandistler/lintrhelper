@@ -1261,8 +1261,6 @@ test_that("help_sections cuts a rendered page at its headings", {
 })
 
 test_that("a wrapped description is not mistaken for the next argument", {
-  # object_overwrite_linter wraps onto a line reading "packages: base,
-  # stats, ...", which sits on the hanging indent rather than left of it.
   arguments <- c(
     "packages: Character vector of packages. Defaults to the most",
     "          common default",
