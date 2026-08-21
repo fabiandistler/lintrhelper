@@ -1,3 +1,5 @@
+# lintrhelper 0.3.3
+
 # lintrhelper 0.3.2
 
 * `explain_rule()` now renders a linter's help page once with `tools::Rd2txt()` and cuts the title, description, usage, and arguments out of the rendered text, instead of walking the parsed `Rd` tree section by section (#33). The custom traversal — `rd_tags()`, `rd_section()`, `rd_aliases()`, `rd_arguments()`, and `rd_text()`'s synthetic-page-and-double-strip dance — is gone, along with a third of the code behind the tool. The help page is found through the package's installed alias index, the same map `?` searches. `\Sexpr` nodes are still replaced before anything is rendered, so a page that builds its text by running R code cannot put a package's internals into the reply.
