@@ -1,4 +1,8 @@
+# lintrhelper 0.3.1
+
 # lintrhelper 0.3.0
+
+* `create_simple_linter()`, `create_function_call_linter()`, `create_assignment_linter()`, and `forbid_symbols()` now share one internal linter factory and placeholder substitution engine (#31).
 
 # lintrhelper 0.2.0
 

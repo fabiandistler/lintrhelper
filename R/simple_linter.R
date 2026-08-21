@@ -1,3 +1,86 @@
+create_linter_factory <- function(xpath, message, type, placeholder = NULL) {
+  function() {
+    lintr::Linter(function(source_expression) {
+      # Return early if this is not a full expression
+      if (!lintr::is_lint_level(source_expression, "file")) {
+        return(list())
+      }
+
+      # Find all matching nodes
+      bad_nodes <- xml2::xml_find_all(
+        source_expression$full_xml_parsed_content,
+        xpath
+      )
+
+      if (!is.null(placeholder)) {
+        messages <- vapply(bad_nodes, function(node) {
+          gsub(
+            paste0("\\{", placeholder, "\\}"),
+            xml2::xml_text(node),
+            message
+          )
+        }, character(1))
+      } else {
+        messages <- message
+      }
+
+      # Convert to lints
+      lintr::xml_nodes_to_lints(
+        bad_nodes,
+        source_expression = source_expression,
+        lint_message = messages,
+        type = type
+      )
+    })
+  }
+}
+
+
+#' Forbid Specific Symbols (Variable Names)
+#'
+#' Create a linter that flags specific symbol names. Useful for banning
+#' certain variable names or enforcing naming conventions.
+#'
+#' @param symbols Character vector of symbol names to forbid.
+#' @param message The lint message. Use \{symbol\} as placeholder for the symbol name.
+#' @param type The lint type. Defaults to "style".
+#'
+#' @return A linter function.
+#'
+#' @examples
+#' \dontrun{
+#' # Ban T and F
+#' no_t_f <- forbid_symbols(
+#'   c("T", "F"),
+#'   "Use TRUE/FALSE instead of {symbol}."
+#' )
+#'
+#' # Ban single-letter variable names
+#' no_single_letters <- forbid_symbols(
+#'   letters,
+#'   "Avoid single-letter variable name '{symbol}'."
+#' )
+#'
+#' test_linter(no_t_f, "x <- T", should_lint = TRUE)
+#' }
+#'
+#' @export
+forbid_symbols <- function(symbols,
+                           message = "Symbol '{symbol}' should not be used.",
+                           type = c("style", "warning", "error")) {
+  type <- match.arg(type)
+
+  # Build XPath internally
+  xpath_condition <- paste(
+    sprintf("text() = '%s'", symbols),
+    collapse = " or "
+  )
+  xpath <- sprintf("//SYMBOL[%s]", xpath_condition)
+
+  create_linter_factory(xpath, message, type, placeholder = "symbol")
+}
+
+
 #' Create a Simple XPath-Based Linter
 #'
 #' This function simplifies the creation of custom linters using XPath expressions.
@@ -32,27 +115,7 @@ create_simple_linter <- function(xpath,
   type <- match.arg(type)
 
   # Return a linter factory function
-  function() {
-    lintr::Linter(function(source_expression) {
-      # Return early if this is not a full expression
-      if (!lintr::is_lint_level(source_expression, "file")) {
-        return(list())
-      }
-
-      xml <- source_expression$full_xml_parsed_content
-
-      # Find all matching nodes
-      bad_nodes <- xml2::xml_find_all(xml, xpath)
-
-      # Convert to lints
-      lintr::xml_nodes_to_lints(
-        bad_nodes,
-        source_expression = source_expression,
-        lint_message = message,
-        type = type
-      )
-    })
-  }
+  create_linter_factory(xpath, message, type)
 }
 
 
@@ -87,37 +150,14 @@ create_function_call_linter <- function(function_names,
   type <- match.arg(type)
 
   # Build XPath for multiple function names
-  if (length(function_names) == 1) {
-    xpath_condition <- sprintf("text() = '%s'", function_names)
-  } else {
-    conditions <- sprintf("text() = '%s'", function_names)
-    xpath_condition <- paste(conditions, collapse = " or ")
-  }
-
+  xpath_condition <- paste(
+    sprintf("text() = '%s'", function_names),
+    collapse = " or "
+  )
   xpath <- sprintf("//SYMBOL_FUNCTION_CALL[%s]", xpath_condition)
 
-  function() {
-    lintr::Linter(function(source_expression) {
-      if (!lintr::is_lint_level(source_expression, "file")) {
-        return(list())
-      }
-
-      xml <- source_expression$full_xml_parsed_content
-      bad_nodes <- xml2::xml_find_all(xml, xpath)
-
-      # Replace {function} placeholder with each node's function name.
-      messages <- vapply(bad_nodes, function(node) {
-        gsub("\\{function\\}", xml2::xml_text(node), message, fixed = FALSE)
-      }, character(1))
-
-      lintr::xml_nodes_to_lints(
-        bad_nodes,
-        source_expression = source_expression,
-        lint_message = messages,
-        type = type
-      )
-    })
-  }
+  # Replace {function} placeholder with each node's function name.
+  create_linter_factory(xpath, message, type, placeholder = "function")
 }
 
 
@@ -166,21 +206,5 @@ create_assignment_linter <- function(forbidden_operators,
   # <expr_or_assign_or_help> for =, etc.).
   xpath <- paste(sprintf("//%s", xml_operators), collapse = " | ")
 
-  function() {
-    lintr::Linter(function(source_expression) {
-      if (!lintr::is_lint_level(source_expression, "file")) {
-        return(list())
-      }
-
-      xml <- source_expression$full_xml_parsed_content
-      bad_nodes <- xml2::xml_find_all(xml, xpath)
-
-      lintr::xml_nodes_to_lints(
-        bad_nodes,
-        source_expression = source_expression,
-        lint_message = message,
-        type = type
-      )
-    })
-  }
+  create_linter_factory(xpath, message, type)
 }
