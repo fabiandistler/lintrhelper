@@ -7,7 +7,9 @@
 #' keep right across releases.
 #'
 #' The wrapper runs at the same lint level as the linter it wraps, so the
-#' framework hands it the source expressions that linter expects.
+#' framework hands it the source expressions that linter expects. A linter
+#' is allowed to return one lint rather than a list of them, which is why
+#' the result is wrapped before it is walked.
 #'
 #' @param built_in The [lintr::Linter()] to delegate the finding to.
 #' @param message A function of one lint returning its message.
@@ -22,7 +24,13 @@ delegate_linter <- function(built_in, message, type) {
     lintr::Linter(
       linter_level = attr(built_in, "linter_level"),
       function(source_expression) {
-        lapply(built_in(source_expression), function(lint) {
+        lints <- built_in(source_expression)
+
+        if (inherits(lints, "lint")) {
+          lints <- list(lints)
+        }
+
+        lapply(lints, function(lint) {
           lint$message <- message(lint)
           lint$type <- type
           lint
