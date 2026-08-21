@@ -1,3 +1,5 @@
+# lintrhelper 0.4.0
+
 # lintrhelper 0.3.4
 
 ## Breaking changes
