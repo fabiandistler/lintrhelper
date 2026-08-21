@@ -1,4 +1,8 @@
+# lintrhelper 0.3.4
+
 # lintrhelper 0.3.3
+
+* The four MCP tools share one reply wrapper and one argument normaliser (#34). `mcp_lint_file()`, `mcp_lint_project()`, `mcp_list_rules()`, and `mcp_explain_rule()` each wrote out the same `tryCatch(ContentToolResult(...))` shape; they now call `mcp_wrap()`, which is the only place in the package that builds a `ContentToolResult`. `normalise_changed_only()`, `normalise_tags()`, and `normalise_rule_name()` repeated the same unlist-validate-trim pass over what an MCP client can send for a scalar or an array; one `normalise_argument()` does it for all three. The tools keep their names, arguments, replies, and error messages: every reply across 28 cases — clean and dirty lints, the degrade note, unknown tags and names, and each malformed-argument error — is byte-identical to before.
 
 # lintrhelper 0.3.2
 

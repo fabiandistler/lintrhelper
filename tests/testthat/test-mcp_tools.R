@@ -213,6 +213,50 @@ test_that("the MCP wrapper reports failures as tool errors, not crashes", {
   expect_false(is.null(bad_anchor@error))
 })
 
+test_that("mcp_wrap carries a value through and an error back as one", {
+  skip_if_not_installed("ellmer")
+
+  ok <- mcp_wrap(list(a = 1))
+  expect_null(ok@error)
+  expect_equal(ok@value, list(a = 1))
+
+  failed <- mcp_wrap(stop("boom", call. = FALSE))
+  expect_equal(failed@error, "boom")
+})
+
+test_that("one normaliser backs every tool argument", {
+  flag <- function(value) {
+    normalise_argument(
+      value,
+      mode = "logical",
+      message = "`changed_only` must be TRUE or FALSE.",
+      empty = FALSE
+    )
+  }
+  rule <- function(value) {
+    normalise_argument(
+      value,
+      mode = "character",
+      message = "`name` must be a single linter name."
+    )
+  }
+
+  expect_false(flag(NULL))
+  expect_false(flag(list()))
+  expect_true(flag(list(TRUE)))
+  expect_error(flag("yes"), "TRUE or FALSE")
+  expect_error(flag(c(TRUE, TRUE)), "TRUE or FALSE")
+  expect_error(flag(NA), "TRUE or FALSE")
+
+  expect_equal(rule(" assignment_linter "), "assignment_linter")
+  expect_equal(rule(list("assignment_linter")), "assignment_linter")
+  expect_error(rule(NULL), "single linter name")
+  expect_error(rule(""), "single linter name")
+  expect_error(rule(1), "single linter name")
+  expect_error(rule(NA_character_), "single linter name")
+  expect_error(rule(c("seq_linter", "seq_linter")), "single linter name")
+})
+
 test_that("lint_file errors on a missing file", {
   proj <- withr::local_tempdir()
   withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
@@ -956,14 +1000,24 @@ test_that("list_rules accepts the list of strings an MCP client sends", {
   )
 })
 
-test_that("normalise_tags trims, drops blanks, and deduplicates", {
-  expect_equal(normalise_tags(NULL), character(0))
-  expect_equal(normalise_tags(character(0)), character(0))
-  expect_equal(normalise_tags(c("", "  ")), character(0))
-  expect_equal(normalise_tags(c(" style ", "style")), "style")
-  expect_equal(normalise_tags(c("style", NA)), "style")
-  expect_equal(normalise_tags(list("style", "default")), c("style", "default"))
-  expect_error(normalise_tags(1), "character vector")
+test_that("a tag filter is trimmed, blanks dropped, and deduplicated", {
+  tags <- function(value) {
+    normalise_argument(
+      value,
+      mode = "character",
+      message = "`tags` must be a character vector of linter tags.",
+      scalar = FALSE,
+      empty = character(0)
+    )
+  }
+
+  expect_equal(tags(NULL), character(0))
+  expect_equal(tags(character(0)), character(0))
+  expect_equal(tags(c("", "  ")), character(0))
+  expect_equal(tags(c(" style ", "style")), "style")
+  expect_equal(tags(c("style", NA)), "style")
+  expect_equal(tags(list("style", "default")), c("style", "default"))
+  expect_error(tags(1), "character vector")
 })
 
 test_that("list_rules writes nothing to stdout", {
