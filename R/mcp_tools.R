@@ -735,9 +735,9 @@ explain_rule <- function(name) {
     tags = as.list(as.character(available[["tags"]][[index]]))
   )
 
-  rd <- rule_help(name, package)
+  page <- rule_help(name, package)
 
-  if (is.null(rd)) {
+  if (is.null(page)) {
     result$message <- sprintf(
       paste(
         "%s exists but %s is installed without help pages,",
@@ -750,13 +750,15 @@ explain_rule <- function(name) {
     return(result)
   }
 
+  sections <- help_sections(page)
+
   c(
     result,
     list(
-      title = rd_text(rd_section(rd, "\\title"), "\\title"),
-      description = rd_text(rd_section(rd, "\\description"), "\\description"),
-      usage = rd_text(rd_section(rd, "\\usage"), "\\usage"),
-      arguments = rd_arguments(rd_section(rd, "\\arguments")),
+      title = help_text(sections[["Title"]]),
+      description = help_text(sections[["Description"]]),
+      usage = help_text(sections[["Usage"]]),
+      arguments = help_arguments(sections[["Arguments"]]),
       help = sprintf("?%s::%s", package, name)
     )
   )
@@ -825,177 +827,58 @@ closest_rules <- function(name, candidates, n = 5L) {
 }
 
 
-#' Find the Help Page Documenting a Linter
+#' Render the Help Page Documenting a Linter
+#'
+#' Looks the name up in the package's installed alias index — the map from
+#' alias to help page that `?` itself searches — and renders the page it
+#' names once with [tools::Rd2txt()], which lays the page out the way `?`
+#' does: the title on the first line, then a heading per section with its
+#' body indented under it. [help_sections()] cuts the reply out of that
+#' text, so nothing here walks the parsed `Rd` tree.
+#'
+#' `\Sexpr` nodes are replaced before rendering. A help page can build part
+#' of its text by running R code at render time, and `Rd2txt()` would run
+#' it — that is what `stage = "render"` means — putting whatever a
+#' package's internals produced into the reply.
 #'
 #' @param name Linter name.
 #' @param package Package providing the linter.
 #'
-#' @return The parsed `Rd` object whose aliases contain `name`, or `NULL`
-#'   when the package ships no help database or documents no such alias.
+#' @return The rendered page as a character vector of lines, trailing
+#'   whitespace removed, or `NULL` when the package ships no help database
+#'   or documents no such alias.
 #'
 #' @keywords internal
 #' @noRd
 rule_help <- function(name, package) {
-  db <- tryCatch(
-    tools::Rd_db(package),
-    error = function(cnd) NULL,
-    warning = function(cnd) NULL
-  )
+  quietly <- function(expr) {
+    tryCatch(expr, error = function(cnd) NULL, warning = function(cnd) NULL)
+  }
 
-  if (length(db) == 0L) {
+  index <- quietly(
+    readRDS(system.file("help", "aliases.rds", package = package))
+  )
+  db <- quietly(tools::Rd_db(package))
+  page <- paste0(index[name], ".Rd")
+
+  if (!page %in% names(db)) {
     return(NULL)
   }
-
-  for (rd in db) {
-    if (name %in% rd_aliases(rd)) {
-      return(rd)
-    }
-  }
-
-  NULL
-}
-
-
-#' Aliases of a Parsed Help Page
-#'
-#' @param rd A parsed `Rd` object.
-#'
-#' @return A character vector of the page's `\alias` entries.
-#'
-#' @keywords internal
-#' @noRd
-rd_aliases <- function(rd) {
-  aliases <- rd[rd_tags(rd) == "\\alias"]
-
-  vapply(
-    aliases,
-    function(alias) trimws(paste0(unlist(alias), collapse = "")),
-    character(1)
-  )
-}
-
-
-#' Section Tags of a Parsed Help Page
-#'
-#' @param rd A parsed `Rd` object, or any list of Rd fragments.
-#'
-#' @return A character vector of Rd tags, one per element.
-#'
-#' @keywords internal
-#' @noRd
-rd_tags <- function(rd) {
-  vapply(
-    rd,
-    function(part) {
-      tag <- attr(part, "Rd_tag")
-      if (is.null(tag)) NA_character_ else tag
-    },
-    character(1)
-  )
-}
-
-
-#' One Section of a Parsed Help Page
-#'
-#' @param rd A parsed `Rd` object.
-#' @param tag The Rd tag to extract, for example `"\\description"`.
-#'
-#' @return The first matching section, or `NULL` when the page has none.
-#'
-#' @keywords internal
-#' @noRd
-rd_section <- function(rd, tag) {
-  index <- which(rd_tags(rd) == tag)
-
-  if (length(index) == 0L) {
-    return(NULL)
-  }
-
-  rd[[index[[1L]]]]
-}
-
-
-#' Render an Rd Fragment as Plain Text
-#'
-#' Wraps the fragment in a minimal help page and hands it to
-#' [tools::Rd2txt()], which is what turns `\code{}`, `\link{}`, and item
-#' lists into readable prose. The synthetic title and the section heading
-#' `Rd2txt()` prints are then stripped back off, along with the indent it
-#' adds, leaving the section's own text.
-#'
-#' The fragment is rendered under its own tag rather than a generic one so
-#' `\usage` keeps its verbatim line breaks instead of being reflowed as
-#' prose.
-#'
-#' @param fragment An Rd fragment, or `NULL`.
-#' @param tag The Rd tag to render the fragment under.
-#'
-#' @return A single string, or `NULL` when `fragment` is `NULL` or renders
-#'   to nothing.
-#'
-#' @keywords internal
-#' @noRd
-rd_text <- function(fragment, tag) {
-  if (is.null(fragment)) {
-    return(NULL)
-  }
-
-  placeholder <- function(section) {
-    structure(list(structure("x", Rd_tag = "TEXT")), Rd_tag = section)
-  }
-
-  # \title is the one section Rd2txt prints without a heading, so the
-  # page's own title would be indistinguishable from the synthetic one.
-  # Rendering it as prose instead keeps the stripping below uniform.
-  rendered_as <- if (identical(tag, "\\title")) "\\description" else tag
-
-  page <- structure(
-    list(
-      placeholder("\\name"),
-      placeholder("\\title"),
-      structure(drop_rd_sexpr(fragment), Rd_tag = rendered_as)
-    ),
-    class = "Rd"
-  )
 
   file <- tempfile()
   on.exit(unlink(file), add = TRUE)
 
   tools::Rd2txt(
-    page,
+    drop_rd_sexpr(db[[page]]),
     out = file,
     options = list(underline_titles = FALSE, width = 76L)
   )
 
-  lines <- sub("[[:space:]]+$", "", readLines(file, warn = FALSE))
-
-  # Drop the synthetic title, then the section heading, then the blank
-  # lines around either of them.
-  lines <- drop_leading_blanks(lines[-1L])
-  lines <- drop_leading_blanks(lines[-1L])
-
-  while (length(lines) > 0L && !nzchar(lines[[length(lines)]])) {
-    lines <- lines[-length(lines)]
-  }
-
-  if (length(lines) == 0L) {
-    return(NULL)
-  }
-
-  indents <- nchar(sub("[^ ].*$", "", lines[nzchar(lines)]))
-  lines <- substring(lines, min(indents) + 1L)
-
-  paste(lines, collapse = "\n")
+  sub("[[:space:]]+$", "", readLines(file, warn = FALSE))
 }
 
 
 #' Replace \Sexpr Nodes With a Pointer to the Help Page
-#'
-#' Help pages can build part of their text by running R code at render
-#' time. [tools::Rd_db()] hands back that code unevaluated, and rendering
-#' it would leak markup such as `\Sexpr[stage=render]{pkg:::helper}` into
-#' the reply — or, worse, invite the agent to run a package's internals.
-#' The node is replaced by a pointer to the page instead.
 #'
 #' @param x An Rd fragment, or any node inside one.
 #'
@@ -1018,39 +901,104 @@ drop_rd_sexpr <- function(x) {
 }
 
 
-drop_leading_blanks <- function(lines) {
-  while (length(lines) > 0L && !nzchar(lines[[1L]])) {
-    lines <- lines[-1L]
-  }
+#' Split a Rendered Help Page Into Its Sections
+#'
+#' A heading is a line that starts in the first column, ends in a colon,
+#' and is followed by a blank line — `Description:`, `Usage:`,
+#' `Arguments:`, and the rest. Everything up to the next heading is that
+#' section's body. The title comes before the first heading and is returned
+#' as `Title`, which is not a section `Rd2txt()` ever prints.
+#'
+#' @param page A rendered help page, as [rule_help()] returns it.
+#'
+#' @return A named list of character vectors, one per section, named
+#'   without the trailing colon.
+#'
+#' @keywords internal
+#' @noRd
+help_sections <- function(page) {
+  heading <- grepl("^[^[:space:]].*:$", page) & c(!nzchar(page[-1L]), TRUE)
+  starts <- c(0L, which(heading))
+  ends <- c(starts[-1L] - 1L, length(page))
 
-  lines
+  sections <- Map(
+    function(start, end) if (end > start) page[(start + 1L):end] else "",
+    starts,
+    ends
+  )
+  names(sections) <- c("Title", sub(":$", "", page[starts[-1L]]))
+
+  sections
 }
 
 
-#' Argument Documentation of a Help Page
+#' One Section's Text, Without the Indent Rd2txt Added
 #'
-#' @param fragment The page's `\arguments` section, or `NULL`.
+#' @param lines A section body, or `NULL` when the page has no such
+#'   section.
+#'
+#' @return A single string, or `NULL` when the section is absent or blank.
+#'
+#' @keywords internal
+#' @noRd
+help_text <- function(lines) {
+  filled <- which(nzchar(lines))
+
+  if (length(filled) == 0L) {
+    return(NULL)
+  }
+
+  lines <- lines[min(filled):max(filled)]
+  indents <- nchar(sub("[^ ].*$", "", lines[nzchar(lines)]))
+
+  paste(substring(lines, min(indents) + 1L), collapse = "\n")
+}
+
+
+#' Argument Documentation Cut Out of a Rendered Arguments Section
+#'
+#' `Rd2txt()` lays each argument out as `name: description`, wrapping the
+#' description under a hanging indent. An item therefore starts where a
+#' line opens with argument names and a colon left of that indent; a page
+#' documenting two names in one item keeps both, as the help page prints
+#' them.
+#'
+#' The indent is what makes the name a name. Wrapped description text lands
+#' on the hanging indent and can open with a word and a colon of its own —
+#' `object_overwrite_linter` wraps onto "packages: base, stats, ..." —
+#' which would otherwise start an argument that does not exist.
+#'
+#' @param lines The page's `Arguments` section, or `NULL`.
 #'
 #' @return An unnamed list of arguments, each with `name` and
 #'   `description`. Empty when the linter takes no arguments.
 #'
 #' @keywords internal
 #' @noRd
-rd_arguments <- function(fragment) {
-  if (is.null(fragment)) {
+help_arguments <- function(lines) {
+  name <- "[A-Za-z._][A-Za-z0-9._]*|\\.\\.\\."
+  labelled <- grepl(sprintf("^ *(%s)(, (%s))*: ", name, name), lines)
+  indents <- nchar(sub("[^ ].*$", "", lines))
+  wrapped <- nzchar(lines) & !labelled
+
+  hanging <- if (any(wrapped)) min(indents[wrapped]) else max(0L, indents) + 1L
+  opens_item <- labelled & indents < hanging
+
+  if (!any(opens_item)) {
     return(list())
   }
 
-  items <- fragment[rd_tags(fragment) == "\\item"]
+  items <- split(lines, cumsum(opens_item))
 
-  # An \item in \arguments carries the argument name and its
-  # description, but a page can document a name and leave it at that.
-  unname(lapply(items, function(item) {
+  unname(lapply(items[names(items) != "0"], function(item) {
+    label <- sub("^( *[^:]*: ).*$", "\\1", item[[1L]])
+
     list(
-      name = trimws(paste0(unlist(item[[1L]]), collapse = "")),
-      description = if (length(item) > 1L) {
-        rd_text(item[[2L]], "\\description")
-      }
+      name = trimws(sub(":.*$", "", item[[1L]])),
+      description = paste(
+        c(substring(item[[1L]], nchar(label) + 1L), help_text(item[-1L])),
+        collapse = "\n"
+      )
     )
   }))
 }

@@ -1224,33 +1224,80 @@ test_that("closest_rules ranks a prefix ahead of a nearer edit distance", {
   expect_length(closest_rules("x", candidates, n = 2), 2)
 })
 
-test_that("rd_text renders a section without its heading or indent", {
-  skip_if_not_installed("lintr")
-
-  rd <- rule_help("assignment_linter", "lintr")
-
-  expect_false(is.null(rd))
-  expect_null(rd_text(NULL, "\\description"))
-  expect_null(rd_section(rd, "\\no_such_section"))
-  description <- rd_text(rd_section(rd, "\\description"), "\\description")
-  expect_no_match(description, "^ ")
-  expect_no_match(rd_text(rd_section(rd, "\\title"), "\\title"), "Description")
-
-  # A usage keeps its own line breaks rather than being reflowed as
-  # prose, which is what makes a wrapped signature readable. The
-  # fragment is built here rather than taken from a linter, whose
-  # signature is lintr's to reformat.
-  signature <- structure(
-    list(structure("f(\n  a = 1,\n  b = 2\n)", Rd_tag = "VERB")),
-    Rd_tag = "\\usage"
+test_that("help_sections cuts a rendered page at its headings", {
+  page <- c(
+    "Assignment linter",
+    "",
+    "Description:",
+    "",
+    "     Check that the operator is used.",
+    "",
+    "Arguments:",
+    "",
+    "operator: Character vector of valid operators.",
+    "",
+    "Tags:",
+    "",
+    "     style"
   )
 
-  expect_equal(rd_text(signature, "\\usage"), "f(\n  a = 1,\n  b = 2\n)")
-  expect_no_match(rd_text(signature, "\\description"), "\n  a = 1")
+  sections <- help_sections(page)
+
+  expect_named(sections, c("Title", "Description", "Arguments", "Tags"))
+  expect_equal(help_text(sections[["Title"]]), "Assignment linter")
+  expect_equal(
+    help_text(sections[["Description"]]),
+    "Check that the operator is used."
+  )
+  expect_null(help_text(sections[["No such section"]]))
+  expect_equal(
+    help_arguments(sections[["Arguments"]]),
+    list(list(
+      name = "operator",
+      description = "Character vector of valid operators."
+    ))
+  )
+  expect_equal(help_arguments(sections[["Tags"]]), list())
+})
+
+test_that("a wrapped description is not mistaken for the next argument", {
+  # object_overwrite_linter wraps onto a line reading "packages: base,
+  # stats, ...", which sits on the hanging indent rather than left of it.
+  arguments <- c(
+    "packages: Character vector of packages. Defaults to the most",
+    "          common default",
+    "          packages: base, stats, and utils.",
+    "",
+    "allow_names: Character vector of object names to ignore."
+  )
+
+  parsed <- help_arguments(arguments)
+
+  expect_equal(
+    vapply(parsed, function(x) x$name, character(1)),
+    c("packages", "allow_names")
+  )
+  expect_match(parsed[[1]]$description, "packages: base, stats, and utils.")
+})
+
+test_that("a whole-page render keeps a usage's own line breaks", {
+  skip_if_not_installed("lintr")
+
+  page <- rule_help("return_linter", "lintr")
+  usage <- help_text(help_sections(page)[["Usage"]])
+
+  expect_match(usage, "^return_linter\\(")
+  expect_match(usage, "\n  return_style", fixed = TRUE)
 })
 
 test_that("rule_help returns NULL for a package with no help database", {
   expect_null(rule_help("assignment_linter", "no_such_package_at_all"))
+})
+
+test_that("rule_help returns NULL for a name the package does not document", {
+  skip_if_not_installed("lintr")
+
+  expect_null(rule_help("no_such_linter_at_all", "lintr"))
 })
 
 test_that("the MCP wrapper serialises rule documentation as compact JSON", {
