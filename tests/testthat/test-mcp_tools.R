@@ -220,9 +220,6 @@ test_that("mcp_wrap carries a value through and an error back as one", {
   expect_null(ok@error)
   expect_equal(ok@value, list(a = 1))
 
-  # The reply is a promise until ContentToolResult() forces it, which
-  # happens inside the tryCatch. That is what lets the four tools pass
-  # the call itself rather than each catching its own errors.
   failed <- mcp_wrap(stop("boom", call. = FALSE))
   expect_equal(failed@error, "boom")
 })
@@ -257,7 +254,6 @@ test_that("one normaliser backs every tool argument", {
   expect_error(rule(""), "single linter name")
   expect_error(rule(1), "single linter name")
   expect_error(rule(NA_character_), "single linter name")
-  # A required scalar is not deduplicated, so two of a name stay two.
   expect_error(rule(c("seq_linter", "seq_linter")), "single linter name")
 })
 
