@@ -299,6 +299,30 @@ These functions let you create linters without any XPath knowledge:
 - **`require_function_arguments()`** - Ensure functions are called with specific arguments
 - **`limit_line_length()`** - Enforce maximum line length
 
+Four of these are thin wrappers: they hand the finding to a lintr linter
+and keep only the message and the lint type, so what gets flagged is
+lintr's to get right and lintr's to keep right across releases.
+
+| Helper | lintr linter it delegates to |
+|---|---|
+| `forbid_functions()` | `undesirable_function_linter()` |
+| `require_naming_pattern()` | `object_name_linter()` |
+| `enforce_assignment_operator()` | `assignment_linter()` |
+| `limit_line_length()` | `line_length_linter()` |
+
+The other three have no lintr twin and stay custom. `forbid_symbols()`
+bans a name outright, which no lintr linter does.
+`require_function_naming_pattern()` checks function names on their own,
+which `object_name_linter()` cannot be asked for — it checks variables
+and functions together. `require_function_arguments()` checks that a
+*call site* passes an argument; lintr's similarly named
+`function_argument_linter()` checks something else entirely, that a
+function *definition* puts its defaulted arguments last.
+
+Reach for a lintr linter directly whenever one says what you mean —
+`lintr::available_linters()` lists them. These helpers are for spelling
+a rule in the terms of the rule rather than the terms of the linter.
+
 ### 🧪 Testing Utilities
 
 - **`test_linter()`** - Simplified testing for your linters

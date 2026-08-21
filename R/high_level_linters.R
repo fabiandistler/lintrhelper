@@ -1,7 +1,94 @@
+#' Wrap a lintr Linter in This Package's Message and Type
+#'
+#' Most of the helpers here ask a question lintr already answers, so they
+#' delegate the finding to lintr's own linter and keep only what they add:
+#' the message, with its `{placeholder}` filled in, and the lint type. What
+#' code is flagged, and where, is then lintr's to get right and lintr's to
+#' keep right across releases.
+#'
+#' The wrapper runs at the same lint level as the linter it wraps, so the
+#' framework hands it the source expressions that linter expects.
+#'
+#' @param built_in The [lintr::Linter()] to delegate the finding to.
+#' @param message A function of one lint returning its message.
+#' @param type The lint type to report.
+#'
+#' @return A linter factory function.
+#'
+#' @keywords internal
+#' @noRd
+delegate_linter <- function(built_in, message, type) {
+  function() {
+    lintr::Linter(
+      linter_level = attr(built_in, "linter_level"),
+      function(source_expression) {
+        lapply(built_in(source_expression), function(lint) {
+          lint$message <- message(lint)
+          lint$type <- type
+          lint
+        })
+      }
+    )
+  }
+}
+
+
+#' The Source Text a Lint Points At
+#'
+#' The flagged function name, symbol, or operator, read back off the line
+#' the lint carries. It is what fills a `{function}`, `{symbol}`, or
+#' `{operator}` placeholder.
+#'
+#' Surrounding backticks and quotes come off: a name written
+#' `` `quoted name` ``, or assigned through `assign("name", ...)`, is
+#' still that name, and a message reads better naming it than naming its
+#' quoting.
+#'
+#' @param lint A lint produced by a lintr linter.
+#'
+#' @return The flagged text, or `""` when the lint marks no range.
+#'
+#' @keywords internal
+#' @noRd
+lint_source <- function(lint) {
+  if (length(lint$ranges) == 0L) {
+    return("")
+  }
+
+  range <- lint$ranges[[1L]]
+  text <- substring(lint$line, range[[1L]], range[[2L]])
+
+  gsub("^[\"'`]|[\"'`]$", "", text)
+}
+
+
+#' Fill a Placeholder With the Flagged Source Text
+#'
+#' @param message The message template.
+#' @param placeholder The placeholder name, without braces.
+#'
+#' @return A function of one lint returning its message.
+#'
+#' @keywords internal
+#' @noRd
+fill_placeholder <- function(message, placeholder) {
+  target <- paste0("{", placeholder, "}")
+
+  function(lint) {
+    gsub(target, lint_source(lint), message, fixed = TRUE)
+  }
+}
+
+
 #' Forbid Specific Functions
 #'
 #' Create a linter that flags specific function calls. This is a simplified
 #' version that doesn't require XPath knowledge.
+#'
+#' @details
+#' A thin wrapper over [lintr::undesirable_function_linter()], which is
+#' what finds the calls. Only calls are flagged, not the bare symbol, so
+#' passing a forbidden function by name is not a lint.
 #'
 #' @param functions Character vector of function names to forbid.
 #' @param message The lint message. Use \{function\} as placeholder.
@@ -52,11 +139,16 @@ forbid_functions <- function(functions,
     }
   }
 
-  create_function_call_linter(
-    function_names = functions,
-    message = message,
-    linter_name = "forbid_functions",
-    type = type
+  undesirable <- as.list(rep(NA_character_, length(functions)))
+  names(undesirable) <- functions
+
+  delegate_linter(
+    lintr::undesirable_function_linter(
+      fun = undesirable,
+      symbol_is_undesirable = FALSE
+    ),
+    fill_placeholder(message, "function"),
+    type
   )
 }
 
@@ -65,6 +157,16 @@ forbid_functions <- function(functions,
 #'
 #' Create a linter that enforces naming conventions for symbols (variables).
 #' No XPath knowledge required - just specify the pattern!
+#'
+#' @details
+#' A thin wrapper over [lintr::object_name_linter()], which is what finds
+#' the names. It checks names where they are *defined* — an assignment, a
+#' function argument — and reports each definition once, rather than every
+#' place the name is used.
+#'
+#' `invert = TRUE` is expressed as a negated pattern, so a name is flagged
+#' when `pattern` matches it anywhere. Anchors keep their meaning:
+#' `"^[A-Z]"` inverts to "starts with an uppercase letter".
 #'
 #' @param pattern Regular expression pattern that names must match.
 #' @param message The lint message. Use \{symbol\} as placeholder.
@@ -99,34 +201,17 @@ require_naming_pattern <- function(pattern,
                                     invert = FALSE) {
   type <- match.arg(type)
 
-  function() {
-    lintr::Linter(function(source_expression) {
-      if (!lintr::is_lint_level(source_expression, "file")) {
-        return(list())
-      }
-
-      xml <- source_expression$full_xml_parsed_content
-
-      all_symbols <- xml2::xml_find_all(xml, "//SYMBOL")
-      symbol_names <- vapply(all_symbols, xml2::xml_text, character(1))
-
-      reserved <- symbol_names %in% c("NA", "NULL", "TRUE", "FALSE", "Inf", "NaN")
-      matches <- grepl(pattern, symbol_names)
-      keep <- if (invert) matches & !reserved else !matches & !reserved
-
-      bad_nodes <- all_symbols[keep]
-      messages <- vapply(symbol_names[keep], function(name) {
-        gsub("{symbol}", name, message, fixed = TRUE)
-      }, character(1), USE.NAMES = FALSE)
-
-      lintr::xml_nodes_to_lints(
-        bad_nodes,
-        source_expression = source_expression,
-        lint_message = messages,
-        type = type
-      )
-    })
+  regex <- if (invert) {
+    sprintf("^(?![\\s\\S]*(?:%s))", pattern)
+  } else {
+    pattern
   }
+
+  delegate_linter(
+    lintr::object_name_linter(regexes = c(convention = regex)),
+    fill_placeholder(message, "symbol"),
+    type
+  )
 }
 
 
@@ -197,6 +282,13 @@ require_function_naming_pattern <- function(pattern,
 #'
 #' Simple way to enforce a specific assignment operator without XPath.
 #'
+#' @details
+#' A thin wrapper over [lintr::assignment_linter()], which is what finds
+#' the assignments. Preferring an arrow allows its super-assignment form
+#' too — `<<-` goes with `<-`, `->>` with `->` — since the choice being
+#' enforced is which arrow to write, not which scope to assign in. `%<>%`
+#' is left alone; it is magrittr's pipe-assign, not one of the three.
+#'
 #' @param prefer Which operator to prefer: "<-", "=", or "->".
 #' @param message Optional custom message.
 #' @param type The lint type. Defaults to "style".
@@ -222,21 +314,17 @@ enforce_assignment_operator <- function(prefer = c("<-", "=", "->"),
   prefer <- match.arg(prefer)
   type <- match.arg(type)
 
-  # Determine forbidden operators
-  all_ops <- c("<-", "=", "->")
-  forbidden <- all_ops[all_ops != prefer]
-
-  # Auto-generate message
   if (is.null(message)) {
     message <- sprintf("Use %s for assignment, not {operator}.", prefer)
   }
 
-  # Use existing function
-  create_assignment_linter(
-    forbidden_operators = forbidden,
-    message = message,
-    linter_name = "enforce_assignment_operator",
-    type = type
+  super_assignment <- c("<-" = "<<-", "->" = "->>")
+  allowed <- c(prefer, super_assignment[names(super_assignment) == prefer])
+
+  delegate_linter(
+    lintr::assignment_linter(operator = unname(c(allowed, "%<>%"))),
+    fill_placeholder(message, "operator"),
+    type
   )
 }
 
@@ -322,6 +410,10 @@ require_function_arguments <- function(function_name,
 #'
 #' Flag lines that exceed a certain character length.
 #'
+#' @details
+#' A thin wrapper over [lintr::line_length_linter()], which is what
+#' measures the lines.
+#'
 #' @param max_length Maximum allowed line length. Default is 80.
 #' @param message The lint message.
 #' @param type The lint type. Defaults to "style".
@@ -347,35 +439,9 @@ limit_line_length <- function(max_length = 80,
     message <- sprintf("Line exceeds %d characters.", max_length)
   }
 
-  function() {
-    lintr::Linter(function(source_expression) {
-      # Only run once per file, using full file lines
-      if (!lintr::is_lint_level(source_expression, "file")) {
-        return(list())
-      }
-
-      lines <- source_expression$file_lines
-
-      # Find lines that are too long
-      long_lines <- which(nchar(lines) > max_length)
-
-      if (length(long_lines) == 0) {
-        return(list())
-      }
-
-      # Create lints for each long line. The `linter` argument of Lint()
-      # is deprecated since lintr 3.0; the framework attaches the linter
-      # name from the surrounding Linter() wrapper.
-      lapply(long_lines, function(line_num) {
-        lintr::Lint(
-          filename = source_expression$filename,
-          line_number = line_num,
-          column_number = max_length + 1,
-          type = type,
-          message = sprintf("%s (currently %d)", message, nchar(lines[line_num])),
-          line = lines[line_num]
-        )
-      })
-    })
-  }
+  delegate_linter(
+    lintr::line_length_linter(length = max_length),
+    function(lint) sprintf("%s (currently %d)", message, nchar(lint$line)),
+    type
+  )
 }

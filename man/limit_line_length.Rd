@@ -23,6 +23,10 @@ A linter function.
 \description{
 Flag lines that exceed a certain character length.
 }
+\details{
+A thin wrapper over \code{\link[lintr:line_length_linter]{lintr::line_length_linter()}}, which is what
+measures the lines.
+}
 \examples{
 \dontrun{
 # Standard 80 characters

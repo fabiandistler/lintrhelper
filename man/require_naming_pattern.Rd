@@ -27,6 +27,16 @@ A linter function.
 Create a linter that enforces naming conventions for symbols (variables).
 No XPath knowledge required - just specify the pattern!
 }
+\details{
+A thin wrapper over \code{\link[lintr:object_name_linter]{lintr::object_name_linter()}}, which is what finds
+the names. It checks names where they are \emph{defined} — an assignment, a
+function argument — and reports each definition once, rather than every
+place the name is used.
+
+\code{invert = TRUE} is expressed as a negated pattern, so a name is flagged
+when \code{pattern} matches it anywhere. Anchors keep their meaning:
+\code{"^[A-Z]"} inverts to "starts with an uppercase letter".
+}
 \examples{
 \dontrun{
 # Require snake_case

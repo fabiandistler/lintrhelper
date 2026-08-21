@@ -1,5 +1,16 @@
 # lintrhelper 0.3.4
 
+## Breaking changes
+
+* `require_naming_pattern()` now checks names where they are **defined** rather than everywhere they are used (#32). It delegates to `lintr::object_name_linter()`, so `myVar <- 1; print(myVar)` is one lint on the assignment instead of two, one per occurrence; `x$badName <- 1` is no lint, because that names a list element and not an object; and a name given through `assign("badName", 1)` or written in backticks is now covered, because lintr covers it. A `for` loop variable is no longer flagged, which lintr's linter does not look at. The exported arguments, the default message, and `invert` are unchanged.
+
+## Improvements
+
+* `forbid_functions()`, `require_naming_pattern()`, `enforce_assignment_operator()`, and `limit_line_length()` are now thin wrappers over `lintr::undesirable_function_linter()`, `lintr::object_name_linter()`, `lintr::assignment_linter()`, and `lintr::line_length_linter()` (#32). Each used to restate a rule lintr already ships, as hand-rolled XPath or as a hand-built `Lint()`; what they keep is the part they add, the message with its `{placeholder}` filled in and the lint type. What is flagged, and where, is now lintr's to get right and lintr's to keep right across releases. Apart from `require_naming_pattern()` above, the lints are unchanged: same lines, same columns, same types.
+* `enforce_assignment_operator()` substitutes `{operator}` in its message. The default message has always read `"Use <- for assignment, not {operator}."`, and the placeholder was shipped to users literally; it now names the operator that was found.
+* `enforce_assignment_operator()` says what it does with super-assignment instead of doing it by accident. Preferring an arrow allows its super-assignment form — `<<-` goes with `<-`, `->>` with `->` — which is what the old operator-to-XML-token mapping happened to do, and `%<>%` is left alone. The lints are the same; the rule is now written down.
+* `forbid_functions()`, `require_function_naming_pattern()`, and `require_function_arguments()` keep their previous behaviour exactly. The last two stay custom: `lintr::object_name_linter()` cannot be asked for function names on their own, and `lintr::function_argument_linter()` checks that a function *definition* puts its defaulted arguments last, which is not the call-site check `require_function_arguments()` performs.
+
 # lintrhelper 0.3.3
 
 * The four MCP tools share one reply wrapper and one argument normaliser (#34). `mcp_lint_file()`, `mcp_lint_project()`, `mcp_list_rules()`, and `mcp_explain_rule()` each wrote out the same `tryCatch(ContentToolResult(...))` shape; they now call `mcp_wrap()`, which is the only place in the package that builds a `ContentToolResult`. `normalise_changed_only()`, `normalise_tags()`, and `normalise_rule_name()` repeated the same unlist-validate-trim pass over what an MCP client can send for a scalar or an array; one `normalise_argument()` does it for all three. The tools keep their names, arguments, replies, and error messages: every reply across 28 cases — clean and dirty lints, the degrade note, unknown tags and names, and each malformed-argument error — is byte-identical to before.
