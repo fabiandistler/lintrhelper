@@ -1,5 +1,9 @@
 # lintrhelper 0.2.0
 
+## Breaking changes
+
+* The five example linters — `no_t_f_linter()`, `no_attach_linter()`, `prefer_arrow_assignment_linter()`, `no_one_length_linter()`, and `no_sapply_linter()` — are removed (#28). Each duplicated a linter lintr already ships, so the package was promising to maintain five rules users could get from lintr directly. Use lintr's own instead: `lintr::T_and_F_symbol_linter()`, `lintr::attach_linter()`, `lintr::assignment_linter()`, `lintr::seq_linter()`, and `lintr::sapply_linter()`. `lintr::available_linters()` lists the rest; lintrhelper is for the rules lintr does not cover.
+
 # lintrhelper 0.1.0.9001 (development)
 
 ## New features
@@ -68,10 +72,6 @@ For users who want more control:
 * Added `create_assignment_linter()` for XPath-based assignment operator linters
 * Added `linter_template()` for code templates
 * Added `xpath_patterns()` for XPath reference
-
-### Ready-to-Use Examples
-
-* Included example linters: `no_t_f_linter()`, `no_attach_linter()`, `prefer_arrow_assignment_linter()`, `no_sapply_linter()`, `no_one_length_linter()`
 
 ### Documentation
 

@@ -314,9 +314,19 @@ For advanced users who want more control:
 - **`linter_template()`** - Code templates
 - **`xpath_patterns()`** - XPath reference guide
 
-### 💡 Ready-to-Use Examples
+### 💡 Rules lintr Already Ships
 
-- `no_t_f_linter()`, `no_attach_linter()`, `prefer_arrow_assignment_linter()`, `no_sapply_linter()`, `no_one_length_linter()`
+lintr covers many common rules out of the box — reach for those before writing
+your own:
+
+- `lintr::T_and_F_symbol_linter()` - `T`/`F` instead of `TRUE`/`FALSE`
+- `lintr::attach_linter()` - use of `attach()`
+- `lintr::assignment_linter()` - assignment operator style
+- `lintr::seq_linter()` - `1:length(x)` instead of `seq_along(x)`
+- `lintr::sapply_linter()` - `sapply()` instead of `vapply()`
+
+Use `lintr::available_linters()` to see the full set. lintrhelper is for the
+rules lintr does not have.
 
 ## Getting Help
 
