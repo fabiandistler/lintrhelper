@@ -188,7 +188,7 @@ it reports”. The agent calls the tools below on its own.
 | Tool | Arguments | What it does |
 |----|----|----|
 | `lint_file` | `path` (required), `project_dir` | Lints one R file under whichever `.lintr` config lintr finds for it. |
-| `lint_project` | `dir`, `changed_only` | Lints a whole project in one call. A directory holding a `DESCRIPTION` goes through [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html), everything else through [`lintr::lint_dir()`](https://lintr.r-lib.org/reference/lint.html). With `changed_only = TRUE` only the files git reports as changed are linted — working tree, index, and untracked files, but not what is already committed. |
+| `lint_project` | `dir`, `changed_only` | Lints a whole project in one call. A directory holding a `DESCRIPTION` goes through [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html), everything else through [`lintr::lint_dir()`](https://lintr.r-lib.org/reference/lint.html). With `changed_only = TRUE` the project is still linted whole and only the diagnostics for the files git reports as changed come back — working tree, index, and untracked files, but not what is already committed. |
 | `list_rules` | `tags` | Reports the linters [`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html) knows about, as name, providing package, and tags. Tags filter as a union; `tags = "default"` is the set that runs without a project `.lintr`. |
 | `explain_rule` | `name` | Returns one linter’s title, description, usage, and arguments, read from its installed help page — so an agent rewriting code to satisfy a lint follows the rule rather than its guess at the rule. |
 

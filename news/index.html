@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,8 +38,13 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.1" id="lintrhelper-031">lintrhelper 0.3.1<a class="anchor" aria-label="anchor" href="#lintrhelper-031"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.2" id="lintrhelper-032">lintrhelper 0.3.2<a class="anchor" aria-label="anchor" href="#lintrhelper-032"></a></h2>
 </div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.1" id="lintrhelper-031">lintrhelper 0.3.1<a class="anchor" aria-label="anchor" href="#lintrhelper-031"></a></h2>
+<ul><li>
+<code>lint_project(changed_only = TRUE)</code> now lints the whole project and keeps only the groups for the files git reports as changed, instead of linting each changed file by name (<a href="https://github.com/fabiandistler/lintrhelper/issues/29" class="external-link">#29</a>). The invariant it promised — a changed file is reported only when a whole-project lint would report it — used to rest on a hand-written mirror of lintr’s lint scope: which directories <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code> walks, which paths <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_dir()</a></code> skips, hidden files, <code>renv</code> and <code>packrat</code> libraries. That mirror needed re-checking against every lintr release, and it is now gone: lintr applies its own exclusions and the reply is filtered afterwards, so the invariant holds by construction. The trade is deliberate — the mode narrows what the agent reads, not what lintr runs, so it no longer saves the cost of the full lint.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="lintrhelper-030">lintrhelper 0.3.0<a class="anchor" aria-label="anchor" href="#lintrhelper-030"></a></h2>
 <ul><li>
