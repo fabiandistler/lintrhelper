@@ -1,6 +1,17 @@
 # Changelog
 
+## lintrhelper 0.3.1
+
 ## lintrhelper 0.3.0
+
+- [`create_simple_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_simple_linter.md),
+  [`create_function_call_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_function_call_linter.md),
+  [`create_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_assignment_linter.md),
+  and
+  [`forbid_symbols()`](https://fabiandistler.github.io/lintrhelper/reference/forbid_symbols.md)
+  now share one internal linter factory and placeholder substitution
+  engine
+  ([\#31](https://github.com/fabiandistler/lintrhelper/issues/31)).
 
 ## lintrhelper 0.2.0
 
