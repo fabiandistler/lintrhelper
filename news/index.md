@@ -2,6 +2,23 @@
 
 ## lintrhelper 0.2.0
 
+### Breaking changes
+
+- The five example linters — `no_t_f_linter()`, `no_attach_linter()`,
+  `prefer_arrow_assignment_linter()`, `no_one_length_linter()`, and
+  `no_sapply_linter()` — are removed
+  ([\#28](https://github.com/fabiandistler/lintrhelper/issues/28)). Each
+  duplicated a linter lintr already ships, so the package was promising
+  to maintain five rules users could get from lintr directly. Use
+  lintr’s own instead:
+  [`lintr::T_and_F_symbol_linter()`](https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html),
+  `lintr::attach_linter()`,
+  [`lintr::assignment_linter()`](https://lintr.r-lib.org/reference/assignment_linter.html),
+  [`lintr::seq_linter()`](https://lintr.r-lib.org/reference/seq_linter.html),
+  and `lintr::sapply_linter()`.
+  [`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html)
+  lists the rest; lintrhelper is for the rules lintr does not cover.
+
 ## lintrhelper 0.1.0.9001 (development)
 
 ### New features
@@ -251,15 +268,6 @@ For users who want more control:
 - Added
   [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
   for XPath reference
-
-#### Ready-to-Use Examples
-
-- Included example linters:
-  [`no_t_f_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_attach_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`prefer_arrow_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_sapply_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_one_length_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
 
 #### Documentation
 

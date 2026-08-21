@@ -34,11 +34,15 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/fabiandistler/lintrhelper/blob/v0.2.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/fabiandistler/lintrhelper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="lintrhelper-020">lintrhelper 0.2.0<a class="anchor" aria-label="anchor" href="#lintrhelper-020"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>The five example linters — <code>no_t_f_linter()</code>, <code>no_attach_linter()</code>, <code>prefer_arrow_assignment_linter()</code>, <code>no_one_length_linter()</code>, and <code>no_sapply_linter()</code> — are removed (<a href="https://github.com/fabiandistler/lintrhelper/issues/28" class="external-link">#28</a>). Each duplicated a linter lintr already ships, so the package was promising to maintain five rules users could get from lintr directly. Use lintr’s own instead: <code><a href="https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html" class="external-link">lintr::T_and_F_symbol_linter()</a></code>, <code>lintr::attach_linter()</code>, <code><a href="https://lintr.r-lib.org/reference/assignment_linter.html" class="external-link">lintr::assignment_linter()</a></code>, <code><a href="https://lintr.r-lib.org/reference/seq_linter.html" class="external-link">lintr::seq_linter()</a></code>, and <code>lintr::sapply_linter()</code>. <code><a href="https://lintr.r-lib.org/reference/available_linters.html" class="external-link">lintr::available_linters()</a></code> lists the rest; lintrhelper is for the rules lintr does not cover.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0.9001" id="lintrhelper-0109001-development">lintrhelper 0.1.0.9001 (development)<a class="anchor" aria-label="anchor" href="#lintrhelper-0109001-development"></a></h2>
@@ -116,11 +120,6 @@
 <li>Added <code><a href="../reference/create_assignment_linter.html">create_assignment_linter()</a></code> for XPath-based assignment operator linters</li>
 <li>Added <code><a href="../reference/linter_template.html">linter_template()</a></code> for code templates</li>
 <li>Added <code><a href="../reference/xpath_patterns.html">xpath_patterns()</a></code> for XPath reference</li>
-</ul></div>
-<div class="section level4">
-<h4 id="ready-to-use-examples-0-1-0">Ready-to-Use Examples<a class="anchor" aria-label="anchor" href="#ready-to-use-examples-0-1-0"></a></h4>
-<ul><li>Included example linters: <code><a href="../reference/example_linters.html">no_t_f_linter()</a></code>, <code><a href="../reference/example_linters.html">no_attach_linter()</a></code>, <code><a href="../reference/example_linters.html">prefer_arrow_assignment_linter()</a></code>, <code><a href="../reference/example_linters.html">no_sapply_linter()</a></code>, <code><a href="../reference/example_linters.html">no_one_length_linter()</a></code>
-</li>
 </ul></div>
 <div class="section level4">
 <h4 id="documentation-0-1-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-0"></a></h4>

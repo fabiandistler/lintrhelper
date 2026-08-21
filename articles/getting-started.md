@@ -185,18 +185,25 @@ linter_template("assignment")
 linter_template("advanced")
 ```
 
-## Example Linters
+## Check lintr’s Built-in Linters First
 
-The package includes several example linters you can use or learn from:
+Before writing a linter, see whether lintr already has one. The rules
+above are useful as teaching examples, but in real projects use lintr’s
+own:
 
 ``` r
 
-# Ready-to-use linters
-lintr::lint("my_script.R", linters = no_t_f_linter())
-lintr::lint("my_script.R", linters = no_attach_linter())
-lintr::lint("my_script.R", linters = prefer_arrow_assignment_linter())
-lintr::lint("my_script.R", linters = no_sapply_linter())
+lintr::lint("my_script.R", linters = lintr::T_and_F_symbol_linter())
+lintr::lint("my_script.R", linters = lintr::attach_linter())
+lintr::lint("my_script.R", linters = lintr::assignment_linter())
+lintr::lint("my_script.R", linters = lintr::seq_linter())
+lintr::lint("my_script.R", linters = lintr::sapply_linter())
+
+# The full list
+lintr::available_linters()
 ```
+
+lintrhelper is for the rules lintr does not already cover.
 
 ## Advanced Custom Linters
 

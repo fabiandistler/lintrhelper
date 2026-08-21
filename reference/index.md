@@ -44,17 +44,6 @@ Lower-level builders for users who want full XPath control.
 - [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
   : List Common XPath Patterns for R Code
 
-## Ready-to-use example linters
-
-Drop-in linters you can use directly or read for inspiration.
-
-- [`no_t_f_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_attach_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`prefer_arrow_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_one_length_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_sapply_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  : Example Linters
-
 ## MCP server
 
 Expose lintrhelper to coding agents over the Model Context Protocol.

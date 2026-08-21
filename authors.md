@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/fabiandistler/lintrhelper/blob/v0.2.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/fabiandistler/lintrhelper/blob/main/DESCRIPTION)
 
 Distler F (2026). *lintrhelper: Create Custom Lintr Rules Without XPath
 Knowledge*. R package version 0.2.0,

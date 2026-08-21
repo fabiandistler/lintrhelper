@@ -60,7 +60,7 @@
       <h1>Getting Started with lintrhelper</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/fabiandistler/lintrhelper/blob/v0.2.0/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/fabiandistler/lintrhelper/blob/main/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
       <div class="d-none name"><code>getting-started.Rmd</code></div>
     </div>
 
@@ -248,16 +248,21 @@ modes:</p>
 <span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"advanced"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example-linters">Example Linters<a class="anchor" aria-label="anchor" href="#example-linters"></a>
+<h2 id="check-lintrs-built-in-linters-first">Check lintr’s Built-in Linters First<a class="anchor" aria-label="anchor" href="#check-lintrs-built-in-linters-first"></a>
 </h2>
-<p>The package includes several example linters you can use or learn
-from:</p>
+<p>Before writing a linter, see whether lintr already has one. The rules
+above are useful as teaching examples, but in real projects use lintr’s
+own:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Ready-to-use linters</span></span>
-<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu"><a href="../reference/example_linters.html">no_t_f_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu"><a href="../reference/example_linters.html">no_attach_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu"><a href="../reference/example_linters.html">prefer_arrow_assignment_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu"><a href="../reference/example_linters.html">no_sapply_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html" class="external-link">T_and_F_symbol_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu">attach_linter</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/assignment_linter.html" class="external-link">assignment_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/seq_linter.html" class="external-link">seq_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu">sapply_linter</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The full list</span></span>
+<span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/available_linters.html" class="external-link">available_linters</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>lintrhelper is for the rules lintr does not already cover.</p>
 </div>
 <div class="section level2">
 <h2 id="advanced-custom-linters">Advanced Custom Linters<a class="anchor" aria-label="anchor" href="#advanced-custom-linters"></a>

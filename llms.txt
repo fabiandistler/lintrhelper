@@ -356,13 +356,26 @@ For advanced users who want more control:
 - **[`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)** -
   XPath reference guide
 
-### 💡 Ready-to-Use Examples
+### 💡 Rules lintr Already Ships
 
-- [`no_t_f_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_attach_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`prefer_arrow_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_sapply_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md),
-  [`no_one_length_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
+lintr covers many common rules out of the box — reach for those before
+writing your own:
+
+- [`lintr::T_and_F_symbol_linter()`](https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html) -
+  `T`/`F` instead of `TRUE`/`FALSE`
+- `lintr::attach_linter()` - use of
+  [`attach()`](https://rdrr.io/r/base/attach.html)
+- [`lintr::assignment_linter()`](https://lintr.r-lib.org/reference/assignment_linter.html) -
+  assignment operator style
+- [`lintr::seq_linter()`](https://lintr.r-lib.org/reference/seq_linter.html) -
+  `1:length(x)` instead of `seq_along(x)`
+- `lintr::sapply_linter()` -
+  [`sapply()`](https://rdrr.io/r/base/lapply.html) instead of
+  [`vapply()`](https://rdrr.io/r/base/lapply.html)
+
+Use
+[`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html)
+to see the full set. lintrhelper is for the rules lintr does not have.
 
 ## Getting Help
 
@@ -586,17 +599,6 @@ Lower-level builders for users who want full XPath control.
   : Get Linter Template Code
 - [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
   : List Common XPath Patterns for R Code
-
-## Ready-to-use example linters
-
-Drop-in linters you can use directly or read for inspiration.
-
-- [`no_t_f_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_attach_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`prefer_arrow_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_one_length_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  [`no_sapply_linter()`](https://fabiandistler.github.io/lintrhelper/reference/example_linters.md)
-  : Example Linters
 
 ## MCP server
 
