@@ -8,8 +8,8 @@ Authors@R: person("Fabian", "Distler",
 Description: Simplifies the creation of custom linters for the 'lintr' package
     without requiring XPath or XML knowledge. Provides high-level functions to
     forbid symbols, ban functions, enforce naming conventions, require specific
-    arguments, and more. Also includes XPath-based builders for advanced users,
-    testing utilities, and ready-to-use example linters.
+    arguments, and more. Also includes XPath-based builders for advanced users
+    and testing utilities.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
