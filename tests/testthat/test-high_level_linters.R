@@ -176,3 +176,141 @@ test_that("limit_line_length works", {
   lints <- lintr::lint(text = "x <- 1", linters = length_10())
   expect_length(lints, 0)
 })
+
+
+lint_lines <- function(lints) {
+  vapply(lints, function(lint) lint$line_number, integer(1))
+}
+
+
+test_that("forbid_functions flags calls but not the bare symbol", {
+  skip_if_not_installed("lintr")
+
+  no_sapply <- forbid_functions("sapply")
+
+  expect_length(lintr::lint(text = "f <- sapply", linters = no_sapply()), 0)
+  expect_length(
+    lintr::lint(text = "lapply(1:2, sapply)", linters = no_sapply()),
+    0
+  )
+
+  qualified <- lintr::lint(
+    text = "base::sapply(1:2, sqrt)",
+    linters = no_sapply()
+  )
+  expect_length(qualified, 1)
+  expect_equal(qualified[[1]]$column_number, 7)
+})
+
+
+test_that("enforce_assignment_operator fills in the flagged operator", {
+  skip_if_not_installed("lintr")
+
+  use_arrow <- enforce_assignment_operator("<-")
+  custom <- enforce_assignment_operator("<-", "Prefer <- over {operator}.")
+
+  expect_equal(
+    lintr::lint(text = "x = 5", linters = use_arrow())[[1]]$message,
+    "Use <- for assignment, not =."
+  )
+  expect_equal(
+    lintr::lint(text = "5 -> x", linters = use_arrow())[[1]]$message,
+    "Use <- for assignment, not ->."
+  )
+  expect_equal(
+    lintr::lint(text = "x = 5", linters = custom())[[1]]$message,
+    "Prefer <- over =."
+  )
+})
+
+
+test_that("a preferred arrow allows its super-assignment form", {
+  skip_if_not_installed("lintr")
+
+  code <- "x <- 1\ny <<- 2\n3 -> z\n4 ->> w\np %<>% as.character()\n"
+  flagged <- function(prefer) {
+    lint_lines(lintr::lint(
+      text = code,
+      linters = enforce_assignment_operator(prefer)()
+    ))
+  }
+
+  expect_equal(flagged("<-"), c(3L, 4L))
+  expect_equal(flagged("->"), c(1L, 2L))
+})
+
+
+test_that("require_naming_pattern reports a definition once, not each use", {
+  skip_if_not_installed("lintr")
+
+  snake_case <- require_naming_pattern("^[a-z][a-z0-9_]*$")
+
+  lints <- lintr::lint(
+    text = "myVar <- 1\nprint(myVar)\nmyVar + myVar\n",
+    linters = snake_case()
+  )
+
+  expect_length(lints, 1)
+  expect_equal(lints[[1]]$line_number, 1)
+  expect_equal(
+    lints[[1]]$message,
+    "Name 'myVar' does not follow naming convention."
+  )
+})
+
+
+test_that("require_naming_pattern names a quoted name without its quoting", {
+  skip_if_not_installed("lintr")
+
+  snake_case <- require_naming_pattern("^[a-z][a-z0-9_]*$")
+  expected <- "Name 'badName' does not follow naming convention."
+
+  quoted <- lintr::lint(text = "`badName` <- 1", linters = snake_case())
+  expect_equal(quoted[[1]]$message, expected)
+
+  assigned <- lintr::lint(
+    text = "assign(\"badName\", 1)",
+    linters = snake_case()
+  )
+  expect_equal(assigned[[1]]$message, expected)
+})
+
+
+test_that("require_naming_pattern inverts anchored and unanchored patterns", {
+  skip_if_not_installed("lintr")
+
+  code <- "MyThing <- 1\nmy_thing <- 2\ntempFile <- 3\n"
+
+  expect_equal(
+    lint_lines(lintr::lint(
+      text = code,
+      linters = require_naming_pattern("^[A-Z]", invert = TRUE)()
+    )),
+    1L
+  )
+  expect_equal(
+    lint_lines(lintr::lint(
+      text = code,
+      linters = require_naming_pattern("temp", invert = TRUE)()
+    )),
+    3L
+  )
+})
+
+
+test_that("limit_line_length keeps its message, column, and length note", {
+  skip_if_not_installed("lintr")
+
+  lints <- lintr::lint(
+    text = paste0("x <- \"", strrep("a", 30), "\""),
+    linters = limit_line_length(20)()
+  )
+
+  expect_length(lints, 1)
+  expect_equal(lints[[1]]$column_number, 21)
+  expect_equal(lints[[1]]$type, "style")
+  expect_equal(
+    lints[[1]]$message,
+    "Line exceeds 20 characters. (currently 37)"
+  )
+})

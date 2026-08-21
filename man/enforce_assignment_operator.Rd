@@ -23,6 +23,13 @@ A linter function.
 \description{
 Simple way to enforce a specific assignment operator without XPath.
 }
+\details{
+A thin wrapper over \code{\link[lintr:assignment_linter]{lintr::assignment_linter()}}, which is what finds
+the assignments. Preferring an arrow allows its super-assignment form
+too — \verb{<<-} goes with \verb{<-}, \verb{->>} with \verb{->} — since the choice being
+enforced is which arrow to write, not which scope to assign in. \verb{\%<>\%}
+is left alone; it is magrittr's pipe-assign, not one of the three.
+}
 \examples{
 \dontrun{
 # Prefer <- (most common)

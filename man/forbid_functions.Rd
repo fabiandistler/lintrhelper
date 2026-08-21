@@ -27,6 +27,11 @@ A linter function.
 Create a linter that flags specific function calls. This is a simplified
 version that doesn't require XPath knowledge.
 }
+\details{
+A thin wrapper over \code{\link[lintr:undesirable_function_linter]{lintr::undesirable_function_linter()}}, which is
+what finds the calls. Only calls are flagged, not the bare symbol, so
+passing a forbidden function by name is not a lint.
+}
 \examples{
 \dontrun{
 # Ban attach()
