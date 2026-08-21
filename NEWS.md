@@ -1,5 +1,7 @@
 # lintrhelper 0.3.3
 
+* The four MCP tools share one reply wrapper and one argument normaliser (#34). `mcp_lint_file()`, `mcp_lint_project()`, `mcp_list_rules()`, and `mcp_explain_rule()` each wrote out the same `tryCatch(ContentToolResult(...))` shape; they now call `mcp_wrap()`, which is the only place in the package that builds a `ContentToolResult`. `normalise_changed_only()`, `normalise_tags()`, and `normalise_rule_name()` repeated the same unlist-validate-trim pass over what an MCP client can send for a scalar or an array; one `normalise_argument()` does it for all three. The tools keep their names, arguments, replies, and error messages: every reply across 28 cases — clean and dirty lints, the degrade note, unknown tags and names, and each malformed-argument error — is byte-identical to before.
+
 # lintrhelper 0.3.2
 
 * `explain_rule()` now renders a linter's help page once with `tools::Rd2txt()` and cuts the title, description, usage, and arguments out of the rendered text, instead of walking the parsed `Rd` tree section by section (#33). The custom traversal — `rd_tags()`, `rd_section()`, `rd_aliases()`, `rd_arguments()`, and `rd_text()`'s synthetic-page-and-double-strip dance — is gone, along with a third of the code behind the tool. The help page is found through the package's installed alias index, the same map `?` searches. `\Sexpr` nodes are still replaced before anything is rendered, so a page that builds its text by running R code cannot put a package's internals into the reply.

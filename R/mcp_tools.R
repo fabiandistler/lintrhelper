@@ -146,11 +146,89 @@ mcp_tools <- function() {
 }
 
 
-#' MCP Wrapper Around lint_file
+#' Carry a Tool's Reply Back to the Client
 #'
-#' Wraps [lint_file()] in an [ellmer::ContentToolResult()] so the
-#' diagnostics reach the client as compact JSON rather than a deparsed R
-#' list.
+#' Wraps a reply in an [ellmer::ContentToolResult()] so it reaches the
+#' client as compact JSON rather than a deparsed R list, and turns a
+#' failure the agent can correct itself — an unknown path, a malformed
+#' argument — into a tool error carrying the message, rather than a
+#' JSON-RPC internal error that clients surface as a hard failure.
+#'
+#' `reply` is evaluated inside the `tryCatch()`, so the tools below can
+#' pass the call itself and leave the error handling here.
+#'
+#' @param reply The tool's reply, unevaluated until it is needed.
+#'
+#' @return An `ellmer::ContentToolResult` carrying the reply, or the error
+#'   message when producing it failed.
+#'
+#' @keywords internal
+#' @noRd
+mcp_wrap <- function(reply) {
+  tryCatch(
+    ellmer::ContentToolResult(value = reply),
+    error = function(cnd) {
+      ellmer::ContentToolResult(error = conditionMessage(cnd))
+    }
+  )
+}
+
+
+#' Normalise an Argument as an MCP Client Sent It
+#'
+#' A client can send a scalar as a length-one list and an array as a list
+#' of scalars, so every tool argument is unlisted before it is looked at.
+#' Strings are then trimmed, and blanks dropped — a client sending `""` for
+#' "no filter" is not asking for a tag named `""`.
+#'
+#' @param value The argument as received.
+#' @param mode The [typeof()] the argument must have once unlisted.
+#' @param message The error to raise when it does not.
+#' @param scalar Whether exactly one value is expected. A vector argument
+#'   is deduplicated; a scalar one is not, so two of the same value stay
+#'   two values and are rejected.
+#' @param empty What to return when nothing is left. Omitted when the
+#'   argument is required, and then nothing left is an error.
+#'
+#' @return The normalised value, or `empty`.
+#'
+#' @keywords internal
+#' @noRd
+normalise_argument <- function(value,
+                               mode,
+                               message,
+                               scalar = TRUE,
+                               empty = NULL) {
+  value <- unlist(value, use.names = FALSE)
+
+  if (identical(mode, "character") && is.character(value)) {
+    value <- trimws(value)
+    value <- value[!is.na(value) & nzchar(value)]
+
+    if (!scalar) {
+      value <- unique(value)
+    }
+  }
+
+  if (length(value) == 0L) {
+    if (is.null(empty)) {
+      stop(message, call. = FALSE)
+    }
+
+    return(empty)
+  }
+
+  wrong_length <- scalar && length(value) != 1L
+
+  if (!identical(typeof(value), mode) || anyNA(value) || wrong_length) {
+    stop(message, call. = FALSE)
+  }
+
+  value
+}
+
+
+#' MCP Wrapper Around lint_file
 #'
 #' @inheritParams lint_file
 #'
@@ -159,12 +237,7 @@ mcp_tools <- function() {
 #' @keywords internal
 #' @noRd
 mcp_lint_file <- function(path, project_dir = NULL) {
-  tryCatch(
-    ellmer::ContentToolResult(value = lint_file(path, project_dir)),
-    error = function(cnd) {
-      ellmer::ContentToolResult(error = conditionMessage(cnd))
-    }
-  )
+  mcp_wrap(lint_file(path, project_dir))
 }
 
 
@@ -219,10 +292,6 @@ lint_file <- function(path, project_dir = NULL) {
 
 #' MCP Wrapper Around lint_project
 #'
-#' Wraps [lint_project()] in an [ellmer::ContentToolResult()] so the
-#' diagnostics reach the client as compact JSON rather than a deparsed R
-#' list.
-#'
 #' @inheritParams lint_project
 #'
 #' @return An `ellmer::ContentToolResult` carrying the grouped diagnostics.
@@ -230,14 +299,7 @@ lint_file <- function(path, project_dir = NULL) {
 #' @keywords internal
 #' @noRd
 mcp_lint_project <- function(dir = NULL, changed_only = FALSE) {
-  tryCatch(
-    ellmer::ContentToolResult(
-      value = tool_payload(lint_project(dir, changed_only))
-    ),
-    error = function(cnd) {
-      ellmer::ContentToolResult(error = conditionMessage(cnd))
-    }
-  )
+  mcp_wrap(tool_payload(lint_project(dir, changed_only)))
 }
 
 
@@ -316,7 +378,12 @@ tool_payload <- function(result) {
 #' @keywords internal
 #' @noRd
 lint_project <- function(dir = NULL, changed_only = FALSE) {
-  changed_only <- normalise_changed_only(changed_only)
+  changed_only <- normalise_argument(
+    changed_only,
+    mode = "logical",
+    message = "`changed_only` must be TRUE or FALSE.",
+    empty = FALSE
+  )
   anchor <- resolve_project_dir(dir)
 
   old_dir <- setwd(anchor)
@@ -373,39 +440,6 @@ lint_whole_project <- function(anchor) {
   } else {
     lintr::lint_dir(anchor)
   }
-}
-
-
-#' Normalise the changed_only Flag
-#'
-#' Accepts what an MCP client can send for an optional boolean — `NULL`, a
-#' logical scalar, or a list holding one — and returns a plain flag.
-#'
-#' @param changed_only The `changed_only` argument as received.
-#'
-#' @return `TRUE` or `FALSE`.
-#'
-#' @keywords internal
-#' @noRd
-normalise_changed_only <- function(changed_only) {
-  if (is.null(changed_only)) {
-    return(FALSE)
-  }
-
-  changed_only <- unlist(changed_only, use.names = FALSE)
-
-  if (length(changed_only) == 0L) {
-    return(FALSE)
-  }
-  if (
-    !is.logical(changed_only) ||
-      length(changed_only) != 1L ||
-      is.na(changed_only)
-  ) {
-    stop("`changed_only` must be TRUE or FALSE.", call. = FALSE)
-  }
-
-  changed_only
 }
 
 
@@ -526,10 +560,6 @@ is_package_dir <- function(dir) {
 
 #' MCP Wrapper Around list_rules
 #'
-#' Wraps [list_rules()] in an [ellmer::ContentToolResult()] so the rule
-#' metadata reaches the client as compact JSON rather than a deparsed R
-#' list.
-#'
 #' @inheritParams list_rules
 #'
 #' @return An `ellmer::ContentToolResult` carrying the rule metadata.
@@ -537,12 +567,7 @@ is_package_dir <- function(dir) {
 #' @keywords internal
 #' @noRd
 mcp_list_rules <- function(tags = NULL) {
-  tryCatch(
-    ellmer::ContentToolResult(value = list_rules(tags)),
-    error = function(cnd) {
-      ellmer::ContentToolResult(error = conditionMessage(cnd))
-    }
-  )
+  mcp_wrap(list_rules(tags))
 }
 
 
@@ -574,7 +599,13 @@ mcp_list_rules <- function(tags = NULL) {
 #' @keywords internal
 #' @noRd
 list_rules <- function(tags = NULL) {
-  requested <- normalise_tags(tags)
+  requested <- normalise_argument(
+    tags,
+    mode = "character",
+    message = "`tags` must be a character vector of linter tags.",
+    scalar = FALSE,
+    empty = character(0)
+  )
 
   available <- lintr::available_linters()
   all_tags <- sort(unique(unlist(available[["tags"]], use.names = FALSE)))
@@ -612,43 +643,7 @@ list_rules <- function(tags = NULL) {
 }
 
 
-#' Normalise a Tag Filter
-#'
-#' Accepts what an MCP client can send for an optional string array —
-#' `NULL`, a character vector, or a list of strings — and returns a plain
-#' character vector. Blanks are dropped so a client sending `""` for "no
-#' filter" is not read as asking for a tag named `""`.
-#'
-#' @param tags The `tags` argument as received.
-#'
-#' @return A unique character vector, empty when no filter was requested.
-#'
-#' @keywords internal
-#' @noRd
-normalise_tags <- function(tags) {
-  if (is.null(tags)) {
-    return(character(0))
-  }
-
-  tags <- unlist(tags, use.names = FALSE)
-
-  if (length(tags) == 0L) {
-    return(character(0))
-  }
-  if (!is.character(tags)) {
-    stop("`tags` must be a character vector of linter tags.", call. = FALSE)
-  }
-
-  tags <- trimws(tags)
-  unique(tags[!is.na(tags) & nzchar(tags)])
-}
-
-
 #' MCP Wrapper Around explain_rule
-#'
-#' Wraps [explain_rule()] in an [ellmer::ContentToolResult()] so the rule
-#' documentation reaches the client as compact JSON rather than a deparsed
-#' R list.
 #'
 #' @inheritParams explain_rule
 #'
@@ -657,12 +652,7 @@ normalise_tags <- function(tags) {
 #' @keywords internal
 #' @noRd
 mcp_explain_rule <- function(name) {
-  tryCatch(
-    ellmer::ContentToolResult(value = explain_rule(name)),
-    error = function(cnd) {
-      ellmer::ContentToolResult(error = conditionMessage(cnd))
-    }
-  )
+  mcp_wrap(explain_rule(name))
 }
 
 
@@ -703,7 +693,11 @@ mcp_explain_rule <- function(name) {
 #' @keywords internal
 #' @noRd
 explain_rule <- function(name) {
-  name <- normalise_rule_name(name)
+  name <- normalise_argument(
+    name,
+    mode = "character",
+    message = "`name` must be a single linter name."
+  )
 
   available <- lintr::available_linters(exclude_tags = NULL)
   index <- match(name, as.character(available[["linter"]]))
@@ -762,34 +756,6 @@ explain_rule <- function(name) {
       help = sprintf("?%s::%s", package, name)
     )
   )
-}
-
-
-#' Normalise a Requested Rule Name
-#'
-#' Accepts what an MCP client can send for a required string — a character
-#' scalar or a list holding one — and returns a plain string.
-#'
-#' @param name The `name` argument as received.
-#'
-#' @return A length-one character vector.
-#'
-#' @keywords internal
-#' @noRd
-normalise_rule_name <- function(name) {
-  name <- unlist(name, use.names = FALSE)
-
-  if (!is.character(name) || length(name) != 1L || is.na(name)) {
-    stop("`name` must be a single linter name.", call. = FALSE)
-  }
-
-  name <- trimws(name)
-
-  if (!nzchar(name)) {
-    stop("`name` must be a single linter name.", call. = FALSE)
-  }
-
-  name
 }
 
 
