@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,15 @@
 <div class="section level3">
 <h3 id="domain-docs">Domain docs<a class="anchor" aria-label="anchor" href="#domain-docs"></a></h3>
 <p>Single-context: <code>CONTEXT.md</code> at the repo root plus <code>docs/adr/</code> for decisions. See <code>docs/agents/domain.md</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="version-bumps">Version bumps<a class="anchor" aria-label="anchor" href="#version-bumps"></a></h3>
+<p>Every PR bumps the package version, so <code>DESCRIPTION</code> and <code>NEWS.md</code> always say which release the work in flight belongs to.</p>
+<p>Write the PR’s <code>NEWS.md</code> entries under the topmost heading — the previous PR left it empty for you. Then, as the last change before pushing, run <code>usethis::use_version()</code> with the component spelled out (it prompts when called with no argument, which fails under <code>Rscript</code>):</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_version</span><span class="op">(</span><span class="st">"minor"</span><span class="op">)</span>  <span class="co"># or "patch"</span></span></code></pre></div>
+<p>That sets <code>Version:</code> in <code>DESCRIPTION</code> and opens a fresh empty heading on top of <code>NEWS.md</code> for the next PR. Your entries stay under the heading you wrote them under.</p>
+<p>Pick the component from what the PR does. The package is pre-1.0, so <code>"minor"</code> covers a breaking change or a new exported function, and <code>"patch"</code> covers a bug fix or a docs-only change. Never edit <code>Version:</code> by hand — <code>use_version()</code> keeps the <code>DESCRIPTION</code> and <code>NEWS.md</code> sides in step.</p>
 </div>
 </div>
 

@@ -68,22 +68,42 @@ and linters use XPath to find problematic patterns.
 
 ### Common XPath Patterns
 
-``` r
-
-# View all common patterns
-xpath_patterns()
-
-# View specific category
-xpath_patterns("functions")
-```
-
-Some examples:
+**Symbols**
 
 - `//SYMBOL` - All symbols (variable names)
-- `//SYMBOL_FUNCTION_CALL` - Function calls
-- `//SYMBOL[text() = 'my_var']` - Specific symbol
+- `//SYMBOL[text() = 'my_var']` - A specific symbol
+- `//SYMBOL[contains(text(), 'temp')]` - Symbols matching a pattern
+
+**Functions**
+
+- `//SYMBOL_FUNCTION_CALL` - All function calls
+- `//SYMBOL_FUNCTION_CALL[text() = 'mean']` - A specific function call
+- `//FUNCTION` - Function definitions
+
+**Operators**
+
+- `//LEFT_ASSIGN | //RIGHT_ASSIGN | //EQ_ASSIGN` - All assignments
+- `//LEFT_ASSIGN` - Left assign (`<-`)
+- `//EQ_ASSIGN` - Equals assign (`=`)
+- `//OP-PLUS | //OP-MINUS | //OP-TIMES | //OP-DIVIDE` - Arithmetic
+  operators
+
+**Literals**
+
 - `//NUM_CONST` - Numeric constants
 - `//STR_CONST` - String constants
+- `//NULL_CONST` - `NULL` values
+
+**Comments**
+
+- `//COMMENT` - All comments
+
+**Navigating the tree**
+
+- `//SYMBOL_FUNCTION_CALL/following-sibling::expr` - Arguments of a call
+- `//LEFT_ASSIGN/preceding-sibling::expr` - Assignment target
+- `//LEFT_ASSIGN/following-sibling::expr` - Assignment value
+- `//IF/following-sibling::expr[1]` - `if` conditions
 
 ### Testing XPath Expressions
 
@@ -167,22 +187,6 @@ test_linter(
   "x <- T",
   message_pattern = "TRUE/FALSE"
 )
-```
-
-## Using Templates
-
-Get started quickly with templates:
-
-``` r
-
-# View all templates
-linter_template("all")
-
-# Get specific template
-linter_template("simple")
-linter_template("function_call")
-linter_template("assignment")
-linter_template("advanced")
 ```
 
 ## Check lintr’s Built-in Linters First
@@ -310,10 +314,9 @@ If you encounter issues or have questions:
 - Check
   [`?create_simple_linter`](https://fabiandistler.github.io/lintrhelper/reference/create_simple_linter.md)
   and other function documentation
-- Use
-  [`linter_template()`](https://fabiandistler.github.io/lintrhelper/reference/linter_template.md)
-  and
-  [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
-  for reference
+- Revisit [Common XPath Patterns](#common-xpath-patterns) and the
+  [Creating Linters Without
+  XPath](https://fabiandistler.github.io/lintrhelper/articles/no-xpath-guide.md)
+  vignette for reference
 - Visit the [GitHub
   repository](https://github.com/fabiandistler/lintrhelper)

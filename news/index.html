@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,10 +38,16 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="lintrhelper-030">lintrhelper 0.3.0<a class="anchor" aria-label="anchor" href="#lintrhelper-030"></a></h2>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="lintrhelper-020">lintrhelper 0.2.0<a class="anchor" aria-label="anchor" href="#lintrhelper-020"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
 <ul><li>The five example linters — <code>no_t_f_linter()</code>, <code>no_attach_linter()</code>, <code>prefer_arrow_assignment_linter()</code>, <code>no_one_length_linter()</code>, and <code>no_sapply_linter()</code> — are removed (<a href="https://github.com/fabiandistler/lintrhelper/issues/28" class="external-link">#28</a>). Each duplicated a linter lintr already ships, so the package was promising to maintain five rules users could get from lintr directly. Use lintr’s own instead: <code><a href="https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html" class="external-link">lintr::T_and_F_symbol_linter()</a></code>, <code>lintr::attach_linter()</code>, <code><a href="https://lintr.r-lib.org/reference/assignment_linter.html" class="external-link">lintr::assignment_linter()</a></code>, <code><a href="https://lintr.r-lib.org/reference/seq_linter.html" class="external-link">lintr::seq_linter()</a></code>, and <code>lintr::sapply_linter()</code>. <code><a href="https://lintr.r-lib.org/reference/available_linters.html" class="external-link">lintr::available_linters()</a></code> lists the rest; lintrhelper is for the rules lintr does not cover.</li>
+<li>Removed <code>linter_template()</code> and <code>xpath_patterns()</code> (<a href="https://github.com/fabiandistler/lintrhelper/issues/30" class="external-link">#30</a>). Both printed reference material to the console with <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> rather than returning anything a caller could use, and both duplicated documentation the vignettes already carry. The XPath patterns now live in the “Understanding XPath” section of the “Getting Started” vignette, and the template code is covered by the worked examples in that vignette and in “Creating Linters Without XPath”.</li>
+<li>
+<code><a href="../reference/quick_test.html">quick_test()</a></code> now reports its result with <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> instead of <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code>, so the summary goes to stderr and can be suppressed with <code><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages()</a></code>. The lints are still returned invisibly, unchanged.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -118,8 +124,6 @@
 <ul><li>Added <code><a href="../reference/create_simple_linter.html">create_simple_linter()</a></code> for XPath-based linter creation</li>
 <li>Added <code><a href="../reference/create_function_call_linter.html">create_function_call_linter()</a></code> for XPath-based function call linters</li>
 <li>Added <code><a href="../reference/create_assignment_linter.html">create_assignment_linter()</a></code> for XPath-based assignment operator linters</li>
-<li>Added <code><a href="../reference/linter_template.html">linter_template()</a></code> for code templates</li>
-<li>Added <code><a href="../reference/xpath_patterns.html">xpath_patterns()</a></code> for XPath reference</li>
 </ul></div>
 <div class="section level4">
 <h4 id="documentation-0-1-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-0"></a></h4>

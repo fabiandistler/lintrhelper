@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,31 +144,74 @@ and linters use XPath to find problematic patterns.</p>
 <div class="section level3">
 <h3 id="common-xpath-patterns">Common XPath Patterns<a class="anchor" aria-label="anchor" href="#common-xpath-patterns"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># View all common patterns</span></span>
-<span><span class="fu"><a href="../reference/xpath_patterns.html">xpath_patterns</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># View specific category</span></span>
-<span><span class="fu"><a href="../reference/xpath_patterns.html">xpath_patterns</a></span><span class="op">(</span><span class="st">"functions"</span><span class="op">)</span></span></code></pre></div>
-<p>Some examples:</p>
+<p><strong>Symbols</strong></p>
 <ul>
 <li>
 <code>//SYMBOL</code> - All symbols (variable names)</li>
 <li>
-<code>//SYMBOL_FUNCTION_CALL</code> - Function calls</li>
+<code>//SYMBOL[text() = 'my_var']</code> - A specific symbol</li>
 <li>
-<code>//SYMBOL[text() = 'my_var']</code> - Specific symbol</li>
+<code>//SYMBOL[contains(text(), 'temp')]</code> - Symbols matching a
+pattern</li>
+</ul>
+<p><strong>Functions</strong></p>
+<ul>
+<li>
+<code>//SYMBOL_FUNCTION_CALL</code> - All function calls</li>
+<li>
+<code>//SYMBOL_FUNCTION_CALL[text() = 'mean']</code> - A specific
+function call</li>
+<li>
+<code>//FUNCTION</code> - Function definitions</li>
+</ul>
+<p><strong>Operators</strong></p>
+<ul>
+<li>
+<code>//LEFT_ASSIGN | //RIGHT_ASSIGN | //EQ_ASSIGN</code> - All
+assignments</li>
+<li>
+<code>//LEFT_ASSIGN</code> - Left assign (<code>&lt;-</code>)</li>
+<li>
+<code>//EQ_ASSIGN</code> - Equals assign (<code>=</code>)</li>
+<li>
+<code>//OP-PLUS | //OP-MINUS | //OP-TIMES | //OP-DIVIDE</code> -
+Arithmetic operators</li>
+</ul>
+<p><strong>Literals</strong></p>
+<ul>
 <li>
 <code>//NUM_CONST</code> - Numeric constants</li>
 <li>
 <code>//STR_CONST</code> - String constants</li>
+<li>
+<code>//NULL_CONST</code> - <code>NULL</code> values</li>
+</ul>
+<p><strong>Comments</strong></p>
+<ul>
+<li>
+<code>//COMMENT</code> - All comments</li>
+</ul>
+<p><strong>Navigating the tree</strong></p>
+<ul>
+<li>
+<code>//SYMBOL_FUNCTION_CALL/following-sibling::expr</code> -
+Arguments of a call</li>
+<li>
+<code>//LEFT_ASSIGN/preceding-sibling::expr</code> - Assignment
+target</li>
+<li>
+<code>//LEFT_ASSIGN/following-sibling::expr</code> - Assignment
+value</li>
+<li>
+<code>//IF/following-sibling::expr[1]</code> - <code>if</code>
+conditions</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="testing-xpath-expressions">Testing XPath Expressions<a class="anchor" aria-label="anchor" href="#testing-xpath-expressions"></a>
 </h3>
 <p>Use <code><a href="../reference/quick_test.html">quick_test()</a></code> to rapidly test XPath expressions:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/quick_test.html">quick_test</a></span><span class="op">(</span><span class="st">"//SYMBOL[text() = 'T']"</span>, <span class="st">"x &lt;- T"</span><span class="op">)</span></span>
 <span><span class="co"># Shows if the XPath matches and where</span></span></code></pre></div>
 </div>
@@ -177,7 +220,7 @@ and linters use XPath to find problematic patterns.</p>
 <h2 id="function-call-linters">Function Call Linters<a class="anchor" aria-label="anchor" href="#function-call-linters"></a>
 </h2>
 <p>A very common use case is flagging specific function calls:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">no_sapply</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_function_call_linter.html">create_function_call_linter</a></span><span class="op">(</span></span>
 <span>  function_names <span class="op">=</span> <span class="st">"sapply"</span>,</span>
 <span>  message <span class="op">=</span> <span class="st">"Use vapply() instead of {function} for type-safe code."</span>,</span>
@@ -187,7 +230,7 @@ and linters use XPath to find problematic patterns.</p>
 <span><span class="co"># Test it</span></span>
 <span><span class="fu"><a href="../reference/test_linter.html">test_linter</a></span><span class="op">(</span><span class="va">no_sapply</span>, <span class="st">"result &lt;- sapply(1:10, sqrt)"</span>, should_lint <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>You can flag multiple functions:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">deprecated_funcs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_function_call_linter.html">create_function_call_linter</a></span><span class="op">(</span></span>
 <span>  function_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sapply"</span>, <span class="st">"mapply"</span><span class="op">)</span>,</span>
 <span>  message <span class="op">=</span> <span class="st">"Function {function} is deprecated in our style guide."</span>,</span>
@@ -200,7 +243,7 @@ with the actual function name found.</p>
 <h2 id="assignment-linters">Assignment Linters<a class="anchor" aria-label="anchor" href="#assignment-linters"></a>
 </h2>
 <p>Another common pattern is enforcing assignment operator style:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">prefer_arrow</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_assignment_linter.html">create_assignment_linter</a></span><span class="op">(</span></span>
 <span>  forbidden_operators <span class="op">=</span> <span class="st">"="</span>,</span>
 <span>  message <span class="op">=</span> <span class="st">"Use &lt;- for assignment, not =."</span>,</span>
@@ -216,7 +259,7 @@ with the actual function name found.</p>
 </h2>
 <p>The <code><a href="../reference/test_linter.html">test_linter()</a></code> function provides several testing
 modes:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Basic: does it lint?</span></span>
 <span><span class="fu"><a href="../reference/test_linter.html">test_linter</a></span><span class="op">(</span><span class="va">my_linter</span>, <span class="st">"x &lt;- T"</span>, should_lint <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -234,26 +277,12 @@ modes:</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="using-templates">Using Templates<a class="anchor" aria-label="anchor" href="#using-templates"></a>
-</h2>
-<p>Get started quickly with templates:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># View all templates</span></span>
-<span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Get specific template</span></span>
-<span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"simple"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"function_call"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"assignment"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/linter_template.html">linter_template</a></span><span class="op">(</span><span class="st">"advanced"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
 <h2 id="check-lintrs-built-in-linters-first">Check lintr’s Built-in Linters First<a class="anchor" aria-label="anchor" href="#check-lintrs-built-in-linters-first"></a>
 </h2>
 <p>Before writing a linter, see whether lintr already has one. The rules
 above are useful as teaching examples, but in real projects use lintr’s
 own:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/T_and_F_symbol_linter.html" class="external-link">T_and_F_symbol_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu">attach_linter</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/assignment_linter.html" class="external-link">assignment_linter</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -269,7 +298,7 @@ own:</p>
 </h2>
 <p>For more complex logic, you can build linters using the full lintr
 API:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lintr.r-lib.org" class="external-link">lintr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://xml2.r-lib.org" class="external-link">xml2</a></span><span class="op">)</span></span>
 <span></span>
@@ -315,7 +344,7 @@ API:</p>
 <h2 id="using-your-linters-with-lintr">Using Your Linters with lintr<a class="anchor" aria-label="anchor" href="#using-your-linters-with-lintr"></a>
 </h2>
 <p>Once you’ve created your linters, use them with lintr:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Single file</span></span>
 <span><span class="fu">lintr</span><span class="fu">::</span><span class="fu"><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lint</a></span><span class="op">(</span><span class="st">"my_script.R"</span>, linters <span class="op">=</span> <span class="fu">my_linter</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -379,8 +408,9 @@ creating linters vignette</a>
 <ul>
 <li>Check <code><a href="../reference/create_simple_linter.html">?create_simple_linter</a></code> and other function
 documentation</li>
-<li>Use <code><a href="../reference/linter_template.html">linter_template()</a></code> and <code><a href="../reference/xpath_patterns.html">xpath_patterns()</a></code>
-for reference</li>
+<li>Revisit <a href="#common-xpath-patterns">Common XPath Patterns</a>
+and the <a href="no-xpath-guide.html">Creating Linters Without XPath</a>
+vignette for reference</li>
 <li>Visit the <a href="https://github.com/fabiandistler/lintrhelper" class="external-link">GitHub
 repository</a>
 </li>

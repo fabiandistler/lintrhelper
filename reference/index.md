@@ -39,10 +39,6 @@ Lower-level builders for users who want full XPath control.
   : Create a Function Call Linter
 - [`create_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_assignment_linter.md)
   : Create an Assignment Linter
-- [`linter_template()`](https://fabiandistler.github.io/lintrhelper/reference/linter_template.md)
-  : Get Linter Template Code
-- [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
-  : List Common XPath Patterns for R Code
 
 ## MCP server
 

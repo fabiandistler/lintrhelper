@@ -351,10 +351,6 @@ For advanced users who want more control:
   XPath-based function call linters
 - **[`create_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_assignment_linter.md)** -
   XPath-based assignment linters
-- **[`linter_template()`](https://fabiandistler.github.io/lintrhelper/reference/linter_template.md)** -
-  Code templates
-- **[`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)** -
-  XPath reference guide
 
 ### 💡 Rules lintr Already Ships
 
@@ -379,29 +375,22 @@ to see the full set. lintrhelper is for the rules lintr does not have.
 
 ## Getting Help
 
-### View Templates
+### Worked Examples
 
-``` r
-
-# See all available templates
-linter_template("all")
-
-# Get specific template
-linter_template("function_call")
-linter_template("advanced")
-```
+The [“Creating Linters Without
+XPath”](https://fabiandistler.github.io/lintrhelper/articles/no-xpath-guide.html)
+vignette walks through the seven common scenarios (forbidden symbols and
+functions, naming conventions, assignment style, required arguments,
+line length) and shows how to assemble them into a team style guide.
 
 ### XPath Reference
 
-``` r
-
-# View common XPath patterns
-xpath_patterns()
-
-# See specific pattern category
-xpath_patterns("functions")
-xpath_patterns("operators")
-```
+The [“Understanding
+XPath”](https://fabiandistler.github.io/lintrhelper/articles/getting-started.html#understanding-xpath)
+section of the “Getting Started” vignette lists the patterns you need
+for the XPath builders, and the [“Advanced Custom
+Linters”](https://fabiandistler.github.io/lintrhelper/articles/getting-started.html#advanced-custom-linters)
+section shows a linter with custom logic beyond XPath matching.
 
 ## More Examples
 

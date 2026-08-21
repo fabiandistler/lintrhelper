@@ -1,5 +1,7 @@
 # Changelog
 
+## lintrhelper 0.3.0
+
 ## lintrhelper 0.2.0
 
 ### Breaking changes
@@ -18,6 +20,22 @@
   and `lintr::sapply_linter()`.
   [`lintr::available_linters()`](https://lintr.r-lib.org/reference/available_linters.html)
   lists the rest; lintrhelper is for the rules lintr does not cover.
+- Removed `linter_template()` and `xpath_patterns()`
+  ([\#30](https://github.com/fabiandistler/lintrhelper/issues/30)). Both
+  printed reference material to the console with
+  [`cat()`](https://rdrr.io/r/base/cat.html) rather than returning
+  anything a caller could use, and both duplicated documentation the
+  vignettes already carry. The XPath patterns now live in the
+  “Understanding XPath” section of the “Getting Started” vignette, and
+  the template code is covered by the worked examples in that vignette
+  and in “Creating Linters Without XPath”.
+- [`quick_test()`](https://fabiandistler.github.io/lintrhelper/reference/quick_test.md)
+  now reports its result with
+  [`message()`](https://rdrr.io/r/base/message.html) instead of
+  [`cat()`](https://rdrr.io/r/base/cat.html), so the summary goes to
+  stderr and can be suppressed with
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html). The lints
+  are still returned invisibly, unchanged.
 
 ## lintrhelper 0.1.0.9001 (development)
 
@@ -262,12 +280,6 @@ For users who want more control:
 - Added
   [`create_assignment_linter()`](https://fabiandistler.github.io/lintrhelper/reference/create_assignment_linter.md)
   for XPath-based assignment operator linters
-- Added
-  [`linter_template()`](https://fabiandistler.github.io/lintrhelper/reference/linter_template.md)
-  for code templates
-- Added
-  [`xpath_patterns()`](https://fabiandistler.github.io/lintrhelper/reference/xpath_patterns.md)
-  for XPath reference
 
 #### Documentation
 
