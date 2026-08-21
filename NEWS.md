@@ -1,4 +1,8 @@
+# lintrhelper 0.3.2
+
 # lintrhelper 0.3.1
+
+* `lint_project(changed_only = TRUE)` now lints the whole project and keeps only the groups for the files git reports as changed, instead of linting each changed file by name (#29). The invariant it promised — a changed file is reported only when a whole-project lint would report it — used to rest on a hand-written mirror of lintr's lint scope: which directories `lintr::lint_package()` walks, which paths `lintr::lint_dir()` skips, hidden files, `renv` and `packrat` libraries. That mirror needed re-checking against every lintr release, and it is now gone: lintr applies its own exclusions and the reply is filtered afterwards, so the invariant holds by construction. The trade is deliberate — the mode narrows what the agent reads, not what lintr runs, so it no longer saves the cost of the full lint.
 
 # lintrhelper 0.3.0
 

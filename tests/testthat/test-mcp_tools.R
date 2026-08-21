@@ -555,6 +555,34 @@ test_that("changed_only keeps a package's unlinted directories out", {
     lint_filenames(lint_project(pkg, changed_only = TRUE)),
     "R/new.R"
   )
+  expect_true(all(
+    lint_filenames(lint_project(pkg, changed_only = TRUE)) %in%
+      lint_filenames(lint_project(pkg))
+  ))
+})
+
+test_that("a changed file is reported exactly as a full lint reports it", {
+  skip_if_not_installed("lintr")
+  skip_without_git()
+
+  proj <- add_file(make_project(withr::local_tempdir()), "R/bar.R")
+  commit_all(make_git_repo(proj))
+  writeLines("z = 3", file.path(proj, "R", "bar.R"))
+  add_file(proj, "renv/activate.R")
+  add_file(proj, ".github/ci.R")
+  add_file(proj, "R/.hidden.R")
+  add_file(proj, "notes.md", code = "notes")
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  narrowed <- lint_project(proj, changed_only = TRUE)
+  whole <- lint_project(proj)
+
+  expect_equal(lint_filenames(narrowed), "R/bar.R")
+  expect_true(all(vapply(
+    narrowed,
+    function(group) any(vapply(whole, identical, logical(1), group)),
+    logical(1)
+  )))
 })
 
 test_that("changed_only reports paths relative to the anchor, not the repo", {
