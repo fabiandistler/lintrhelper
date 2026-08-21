@@ -66,13 +66,13 @@ mcp_tools <- function() {
         ),
         changed_only = ellmer::type_boolean(
           paste(
-            "Lint only what git reports as changed (the edits in the",
-            "working tree and the index, plus untracked files) rather than",
-            "the whole project, so fixing a branch does not pay for the",
-            "whole repository. Changes that are already committed are not",
-            "included. A directory git cannot report on, an unversioned one",
-            "above all, is linted whole and the reply says why. Defaults to",
-            "false."
+            "Report only the diagnostics of what git reports as changed",
+            "(the edits in the working tree and the index, plus untracked",
+            "files) rather than the whole project, so fixing a branch does",
+            "not mean reading the whole repository's lints. Changes that",
+            "are already committed are not included. A directory git cannot",
+            "report on, an unversioned one above all, is reported whole and",
+            "the reply says why. Defaults to false."
           ),
           required = FALSE
         )
@@ -281,14 +281,20 @@ tool_payload <- function(result) {
 #' upwards, unlike `lint_package()`, which would otherwise walk up and lint
 #' an enclosing package instead of the directory that was asked for.
 #'
-#' `changed_only = TRUE` narrows the lint to what git reports as changed —
-#' the edits in the working tree and the index, plus untracked files — so
-#' an agent fixing a branch does not pay for the whole repository on every
-#' call. Changes that are already committed are not included: the question
-#' asked is "what have I touched and not finished", which is the state an
-#' agent's own edits leave behind. The narrowed set is a subset of what a
-#' full lint would report, so a changed file lands in the result only when
-#' the whole-project lint would have reported it too.
+#' `changed_only = TRUE` narrows the *reply* to what git reports as changed
+#' — the edits in the working tree and the index, plus untracked files — so
+#' an agent fixing a branch reads only the diagnostics for what it touched
+#' instead of the whole repository's. Changes that are already committed are
+#' not included: the question asked is "what have I touched and not
+#' finished", which is the state an agent's own edits leave behind.
+#'
+#' The project is still linted whole and the changed paths are then kept
+#' out of the result. That is what makes the narrowed set a subset of the
+#' full lint by construction: lintr applies its own exclusions — the
+#' directories a package lint walks, hidden paths, `renv` and `packrat`
+#' libraries, a project's `.lintr` — so nothing here has to restate them
+#' and fall out of step on the next lintr release. It costs a whole-project
+#' lint per call; correctness is worth more than the saving.
 #'
 #' A directory git cannot report on — an unversioned one above all — is not
 #' an error. It is linted whole, and the result carries a `message`
@@ -317,19 +323,35 @@ lint_project <- function(dir = NULL, changed_only = FALSE) {
   on.exit(setwd(old_dir), add = TRUE)
 
   changed <- if (changed_only) changed_files(anchor) else NULL
-  lint_everything <- is.null(changed) || !is.null(changed$message)
 
-  lints <- if (lint_everything) {
-    lint_whole_project(anchor)
-  } else {
-    lint_changed_files(changed$files)
+  result <- group_lints(lint_whole_project(anchor), anchor)
+
+  if (!is.null(changed) && is.null(changed$message)) {
+    result <- keep_changed_groups(result, changed$files)
   }
 
-  result <- group_lints(lints, anchor)
   # NULL when git answered, and then the assignment leaves no attribute.
   attr(result, "message") <- changed$message
 
   result
+}
+
+
+#' Keep Only the Groups Belonging to Changed Files
+#'
+#' @param groups The grouped diagnostics of a whole-project lint.
+#' @param files Changed paths relative to the project root, as git
+#'   reported them.
+#'
+#' @return The groups whose `filename` git named, in the order the lint
+#'   produced them.
+#'
+#' @keywords internal
+#' @noRd
+keep_changed_groups <- function(groups, files) {
+  filenames <- vapply(groups, function(group) group$filename, character(1))
+
+  unname(groups[filenames %in% files])
 }
 
 
@@ -351,28 +373,6 @@ lint_whole_project <- function(anchor) {
   } else {
     lintr::lint_dir(anchor)
   }
-}
-
-
-#' Lint Named Files, One at a Time
-#'
-#' Each file goes through [lintr::lint()], the entry point [lint_file()]
-#' uses, rather than one [lintr::lint_dir()] call over the set: a changed
-#' file is then linted under the config lintr finds for it, exactly as if
-#' the agent had asked for that file by name.
-#'
-#' @param files Paths relative to the project root, which is already the
-#'   working directory.
-#'
-#' @return A plain list of lints, empty when every file is clean.
-#'
-#' @keywords internal
-#' @noRd
-lint_changed_files <- function(files) {
-  unlist(
-    lapply(files, function(file) as.list(lintr::lint(file))),
-    recursive = FALSE
-  )
 }
 
 
@@ -412,10 +412,13 @@ normalise_changed_only <- function(changed_only) {
 #' The Files Git Reports as Changed
 #'
 #' Asks git for the paths that differ from `HEAD` in the working tree or
-#' the index, plus the untracked files it does not ignore, and keeps the
-#' ones a project lint would have covered. Paths come back relative to
-#' `dir`, which is what makes an anchor inside a larger repository report
-#' its own files and no others.
+#' the index, plus the untracked files it does not ignore. Paths come back
+#' relative to `dir`, which is what makes an anchor inside a larger
+#' repository report its own files and no others.
+#'
+#' The paths are not narrowed to what lintr would read: [lint_project()]
+#' intersects them with the groups of a whole-project lint, so a path lintr
+#' never walks simply matches nothing.
 #'
 #' A repository without a commit has no `HEAD` to diff against, so
 #' everything it tracks counts as changed — which for a fresh `git init` is
@@ -459,7 +462,9 @@ changed_files <- function(dir) {
     ))
   }
 
-  list(files = lintable_files(c(tracked$lines, untracked$lines), dir))
+  files <- c(tracked$lines, untracked$lines)
+
+  list(files = sort(unique(files[nzchar(files)])))
 }
 
 
@@ -491,119 +496,6 @@ run_git <- function(dir, args) {
     ok = is.null(status) || identical(as.integer(status), 0L),
     lines = as.character(output)
   )
-}
-
-
-#' Narrow Changed Paths to the Ones a Project Lint Would Cover
-#'
-#' Drops what git reports but lintr would not have linted anyway: files
-#' with an extension lintr does not read, files the change deleted, paths
-#' [lintr::lint_dir()] never walks, and, in a package, everything outside
-#' the directories [lintr::lint_package()] walks. Without this the mode
-#' would widen the result rather than narrow it — git sees a `.github/`
-#' script or an `renv/` library that a project lint never reports.
-#'
-#' @param files Changed paths relative to `dir`, as git reported them.
-#' @param dir Normalised project root.
-#'
-#' @return A sorted character vector of paths relative to `dir`.
-#'
-#' @keywords internal
-#' @noRd
-lintable_files <- function(files, dir) {
-  # lint_dir()'s own default, read off lintr rather than restated here, so
-  # the extensions this accepts stay the ones lintr reads. The scopes
-  # below have to be restated instead: they are a call and a function
-  # body, not a string a caller can read back.
-  pattern <- formals(lintr::lint_dir)[["pattern"]]
-
-  files <- unique(files[nzchar(files)])
-  files <- files[grepl(pattern, files, perl = TRUE)]
-  files <- files[file.exists(file.path(dir, files))]
-
-  in_scope <- if (is_package_dir(dir)) {
-    in_package_lint_scope(files)
-  } else {
-    in_dir_lint_scope(files)
-  }
-
-  sort(files[in_scope & !is_hidden_path(files)])
-}
-
-
-#' Is a Path Inside What lint_dir() Walks?
-#'
-#' Mirrors [lintr::lint_dir()]'s default exclusions. A lintr that changes
-#' them needs this changed with it.
-#'
-#' @param files Paths relative to the directory being linted.
-#'
-#' @return A logical vector, one element per path.
-#'
-#' @keywords internal
-#' @noRd
-in_dir_lint_scope <- function(files) {
-  !top_directory(files) %in% c("renv", "packrat")
-}
-
-
-#' Does Any Part of a Path Start With a Dot?
-#'
-#' [lintr::lint_dir()] lists its files without `all.files`, so a hidden
-#' file, and everything under a hidden directory, stays out of a project
-#' lint however the file got there. git reports them all the same.
-#'
-#' @param files Paths relative to the directory being linted.
-#'
-#' @return A logical vector, one element per path.
-#'
-#' @keywords internal
-#' @noRd
-is_hidden_path <- function(files) {
-  vapply(
-    strsplit(files, "/", fixed = TRUE),
-    function(parts) any(startsWith(parts, ".")),
-    logical(1)
-  )
-}
-
-
-#' The First Directory of a Path
-#'
-#' @param files Paths relative to the directory being linted.
-#'
-#' @return A character vector: the part before the first `/`, or the path
-#'   itself when it has none.
-#'
-#' @keywords internal
-#' @noRd
-top_directory <- function(files) {
-  sub("/.*$", "", files)
-}
-
-
-#' Is a Path Inside What lint_package() Lints?
-#'
-#' Mirrors the directories [lintr::lint_package()] walks and the generated
-#' file it excludes, so `changed_only` reports a file only when a full
-#' package lint would have reported it too.
-#'
-#' These live inside `lint_package()`'s body, so unlike the file pattern in
-#' [lintable_files()] they can only be restated. A lintr that grows a
-#' linted directory needs this list grown with it.
-#'
-#' @param files Paths relative to the package root.
-#'
-#' @return A logical vector, one element per path.
-#'
-#' @keywords internal
-#' @noRd
-in_package_lint_scope <- function(files) {
-  directories <- c(
-    "R", "tests", "inst", "vignettes", "data-raw", "demo", "exec"
-  )
-
-  top_directory(files) %in% directories & files != "R/RcppExports.R"
 }
 
 
