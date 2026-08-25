@@ -17,3 +17,5 @@
 ^opencode\.json$
 ^\.codex$
 ^\.agents$
+^ROOMBA\.md$
+^\.roomba$
