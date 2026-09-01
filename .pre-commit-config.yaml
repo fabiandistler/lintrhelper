@@ -1,0 +1,13 @@
+# Ablage: .pre-commit-config.yaml in der Repo-Wurzel, danach `pre-commit install`.
+# Faengt lokal ab, was das roomba-gate sonst erst im PR blockt.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/lorenzwalthert/precommit
+    rev: v0.4.3
+    hooks:
+      - id: parsable-R
+      - id: no-browser-statement

@@ -17,3 +17,6 @@
 ^opencode\.json$
 ^\.codex$
 ^\.agents$
+^ROOMBA\.md$
+^scripts$
+^\.pre-commit-config\.yaml$
