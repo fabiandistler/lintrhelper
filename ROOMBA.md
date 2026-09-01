@@ -10,10 +10,10 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 
 | Feld | Wert |
 |---|---|
-| Letzter Lauf | *(noch keiner)* |
-| Letzter Job | - |
-| Naechster faelliger Job | `deps-audit` (kein Job je gelaufen -> Katalogreihenfolge) |
-| Offene roomba-PRs | - |
+| Letzter Lauf | 2026-09-01 |
+| Letzter Job | `deps-audit` (Report, keine Codeaenderung) |
+| Naechster faelliger Job | `doc-drift` (nie gelaufen -> Score unendlich, sofort faellig) |
+| Offene roomba-PRs | `roomba/deps-audit-2026-09-01` |
 
 ## Regeln
 
@@ -87,7 +87,7 @@ Die vorhandenen Workflows `R-CMD-check.yaml` und `pkgdown.yaml` blieben unangeta
 
 | # | Job | Vorstufe | Output | Cooldown | Zuletzt gelaufen |
 |---|---|---|---|---|---|
-| 1 | `deps-audit` | ja | Report | 7d | - |
+| 1 | `deps-audit` | ja | Report | 7d | 2026-09-01 |
 | 2 | `doc-drift` | nein | PR | 14d | - |
 | 3 | `dead-exports` | ja | PR | 14d | - |
 | 4 | `error-edges` | nein | Report | 14d | - |
@@ -109,13 +109,21 @@ Rest-Frage je Job (Details im Skill unter `references/jobs.md`):
 
 ## Backlog
 
-*(leer)*
+- **`doc-drift`:** `roxygen2::roxygenise()` meldet 12 `Could not resolve link`-Warnungen
+  auf `explain_rule` und `list_rules` (ab `R/mcp_tools.R:676`). Unter roxygen2 8.0.0 und
+  8.1.0 identisch, also keine Upgrade-Regression, sondern Doku-Drift. Aufgefallen im
+  Lauf `deps-audit` 2026-09-01, gehoert aber in Job 2.
+- **Automatisierung:** minimale `.github/dependabot.yml` mit *nur* dem
+  `github-actions`-Oekosystem. Anlass: `JamesIves/github-pages-deploy-action@v4.5.0` in
+  `.github/workflows/pkgdown.yaml:45` ist exakt gepinnt und veraltet still. Fuer die
+  `DESCRIPTION`-Abhaengigkeiten bringt weder Dependabot noch Renovate etwas - beide haben
+  keinen R-/CRAN-Manager. Beleg im Report vom 2026-09-01.
 
 ## Lauf-Historie
 
 | Datum | Job | Output | PR |
 |---|---|---|---|
-| - | - | - | - |
+| 2026-09-01 | `deps-audit` | [Report](roomba/reports/2026-09-01-deps-audit.md) | PR_PLACEHOLDER |
 
 ## Abbaubedingung
 
