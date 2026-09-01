@@ -318,10 +318,10 @@ lintr covers many common rules out of the box — reach for those before writing
 your own:
 
 - `lintr::T_and_F_symbol_linter()` - `T`/`F` instead of `TRUE`/`FALSE`
-- `lintr::attach_linter()` - use of `attach()`
 - `lintr::assignment_linter()` - assignment operator style
 - `lintr::seq_linter()` - `1:length(x)` instead of `seq_along(x)`
-- `lintr::sapply_linter()` - `sapply()` instead of `vapply()`
+- `lintr::undesirable_function_linter()` - discouraged functions, including
+  `attach()` and `sapply()`, via `lintr::default_undesirable_functions`
 
 Use `lintr::available_linters()` to see the full set. lintrhelper is for the
 rules lintr does not have.
@@ -456,7 +456,7 @@ When developing XPath expressions, use `quick_test()`:
 # Test if your XPath matches what you expect
 quick_test("//SYMBOL[text() = 'T']", "x <- T")
 # Found 1 lint(s):
-# <text>:1:6: warning: [temp_test_linter] Found match
+# <text>:1:6: warning: ... Found match
 # x <- T
 #      ^
 

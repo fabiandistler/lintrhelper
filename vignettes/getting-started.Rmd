@@ -185,14 +185,16 @@ useful as teaching examples, but in real projects use lintr's own:
 
 ```{r eval=FALSE}
 lintr::lint("my_script.R", linters = lintr::T_and_F_symbol_linter())
-lintr::lint("my_script.R", linters = lintr::attach_linter())
 lintr::lint("my_script.R", linters = lintr::assignment_linter())
 lintr::lint("my_script.R", linters = lintr::seq_linter())
-lintr::lint("my_script.R", linters = lintr::sapply_linter())
+lintr::lint("my_script.R", linters = lintr::undesirable_function_linter())
 
 # The full list
 lintr::available_linters()
 ```
+
+`undesirable_function_linter()` covers discouraged calls such as `attach()` and
+`sapply()` — see `lintr::default_undesirable_functions` for the list it uses.
 
 lintrhelper is for the rules lintr does not already cover.
 
