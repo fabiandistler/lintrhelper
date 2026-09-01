@@ -13,7 +13,7 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 | Letzter Lauf | 2026-09-01 |
 | Letzter Job | `doc-drift` (PR, nur Doku - README, Vignette, roxygen-Kommentare) |
 | Naechster faelliger Job | `dead-exports` (nie gelaufen -> Score unendlich, sofort faellig) |
-| Offene roomba-PRs | `roomba/doc-drift-2026-09-01` |
+| Offene roomba-PRs | [#49](https://github.com/fabiandistler/lintrhelper/pull/49) `roomba/doc-drift-2026-09-01` |
 
 ## Regeln
 
@@ -139,7 +139,7 @@ Rest-Frage je Job (Details im Skill unter `references/jobs.md`):
 | Datum | Job | Output | PR |
 |---|---|---|---|
 | 2026-09-01 | `deps-audit` | [Report](roomba/reports/2026-09-01-deps-audit.md) | [#48](https://github.com/fabiandistler/lintrhelper/pull/48) |
-| 2026-09-01 | `doc-drift` | [PR + Report](roomba/reports/2026-09-01-doc-drift.md) | `roomba/doc-drift-2026-09-01` |
+| 2026-09-01 | `doc-drift` | [PR + Report](roomba/reports/2026-09-01-doc-drift.md) | [#49](https://github.com/fabiandistler/lintrhelper/pull/49) |
 
 ## Abbaubedingung
 
