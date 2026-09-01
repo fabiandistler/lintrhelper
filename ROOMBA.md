@@ -61,6 +61,12 @@ Im Katalog bleibt nur die Rest-Frage: `dead-exports` (Export ueber die Paketgren
   Da dieses Repo ein reines R-Paket ist, sind die Sprach-Guards hier ohnehin
   gegenstandslos: `python-lint` ist entfernt, `r-lint` laeuft ungeguarded.
   Gegenprobe: `actionlint` ueber alle drei Workflows ist sauber.
+- **`local::.` in `setup-r-dependencies`.** `object_usage_linter()` loest
+  Cross-File-Referenzen ueber die *installierte* Paket-Namespace auf. Ohne das
+  installierte Paket meldet der Linter auf CI vier falsche
+  "no visible global function definition" (`create_function_call_linter`,
+  `create_assignment_linter`, `mcp_tools`, `create_simple_linter`) - lokal, wo
+  `lintrhelper` installiert ist, sind es 0. Das Asset installierte nur `any::lintr`.
 - **Kein `.lintr` im Repo-Root.** Dieses Paket ist `lintrhelper`; eine automatisch
   gefundene `.lintr` wuerde auch die eigene Testsuite beeinflussen. Der
   Linter-Zuschnitt steht deshalb inline im Workflow.
