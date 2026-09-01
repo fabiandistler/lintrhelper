@@ -54,6 +54,13 @@ Im Katalog bleibt nur die Rest-Frage: `dead-exports` (Export ueber die Paketgren
   `library(lintrhelper)` in `tests/testthat.R` (testthat-Boilerplate) sowie
   `library(lintr)` und `library(xml2)` in `vignettes/getting-started.Rmd`
   (Lehrcode, der so gelesen werden soll). Keiner ist ohne Verhaltensaenderung behebbar.
+- **Keine `hashFiles()`-Guards auf Job-Ebene, kein `python-lint`-Job.** Das Asset
+  guardet beide Sprachjobs mit `if: hashFiles(...) != ''` auf Job-Ebene. Das ist von
+  GitHub Actions nicht erlaubt (`hashFiles` gibt es nur in `jobs.<id>.steps.*`) und
+  liess den kompletten Workflow schon vor dem Scheduling scheitern - kein Job lief.
+  Da dieses Repo ein reines R-Paket ist, sind die Sprach-Guards hier ohnehin
+  gegenstandslos: `python-lint` ist entfernt, `r-lint` laeuft ungeguarded.
+  Gegenprobe: `actionlint` ueber alle drei Workflows ist sauber.
 - **Kein `.lintr` im Repo-Root.** Dieses Paket ist `lintrhelper`; eine automatisch
   gefundene `.lintr` wuerde auch die eigene Testsuite beeinflussen. Der
   Linter-Zuschnitt steht deshalb inline im Workflow.

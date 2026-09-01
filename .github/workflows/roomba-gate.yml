@@ -25,20 +25,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  python-lint:
-    runs-on: ubuntu-latest
-    if: hashFiles('pyproject.toml', 'requirements.txt') != ''
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - name: ruff (ungenutzte Imports/Variablen, unsichere Muster)
-        run: uvx ruff check --select E,F,B,S .
-      - name: bandit
-        run: uvx bandit -r . -q
-
   r-lint:
     runs-on: ubuntu-latest
-    if: hashFiles('DESCRIPTION') != ''
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
