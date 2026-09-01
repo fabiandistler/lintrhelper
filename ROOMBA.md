@@ -13,7 +13,7 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 | Letzter Lauf | 2026-09-01 |
 | Letzter Job | `deps-audit` (Report, keine Codeaenderung) |
 | Naechster faelliger Job | `doc-drift` (nie gelaufen -> Score unendlich, sofort faellig) |
-| Offene roomba-PRs | `roomba/deps-audit-2026-09-01` |
+| Offene roomba-PRs | [#48](https://github.com/fabiandistler/lintrhelper/pull/48) `roomba/deps-audit-2026-09-01` |
 
 ## Regeln
 
@@ -123,7 +123,7 @@ Rest-Frage je Job (Details im Skill unter `references/jobs.md`):
 
 | Datum | Job | Output | PR |
 |---|---|---|---|
-| 2026-09-01 | `deps-audit` | [Report](roomba/reports/2026-09-01-deps-audit.md) | PR_PLACEHOLDER |
+| 2026-09-01 | `deps-audit` | [Report](roomba/reports/2026-09-01-deps-audit.md) | [#48](https://github.com/fabiandistler/lintrhelper/pull/48) |
 
 ## Abbaubedingung
 
