@@ -43,7 +43,8 @@ Im Katalog bleibt nur die Rest-Frage: `dead-exports` (Export ueber die Paketgren
 
 ### Gate-Zuschnitt in diesem Repo
 
-`.github/workflows/roomba-gate.yml` weicht bewusst vom Plugin-Asset ab:
+`.github/workflows/roomba-gate.yml` und `.pre-commit-config.yaml` weichen bewusst von
+den Plugin-Assets ab:
 
 - **Blockend nur `lintr::object_usage_linter()`** - aktuell 0 Lints. Das Asset liess
   zusaetzlich `lintr::lint_package()` mit dem vollen Default-Satz hart fehlschlagen;
