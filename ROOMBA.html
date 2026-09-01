@@ -49,14 +49,17 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Feld</th>
 <th>Wert</th>
 </tr></thead><tbody><tr><td>Letzter Lauf</td>
-<td><em>(noch keiner)</em></td>
+<td>2026-09-01</td>
 </tr><tr><td>Letzter Job</td>
-<td>-</td>
+<td>
+<code>deps-audit</code> (Report, keine Codeaenderung)</td>
 </tr><tr><td>Naechster faelliger Job</td>
 <td>
-<code>deps-audit</code> (kein Job je gelaufen -&gt; Katalogreihenfolge)</td>
+<code>doc-drift</code> (nie gelaufen -&gt; Score unendlich, sofort faellig)</td>
 </tr><tr><td>Offene roomba-PRs</td>
-<td>-</td>
+<td>
+<a href="https://github.com/fabiandistler/lintrhelper/pull/48" class="external-link">#48</a> <code>roomba/deps-audit-2026-09-01</code>
+</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="regeln">Regeln<a class="anchor" aria-label="anchor" href="#regeln"></a></h2>
@@ -121,7 +124,7 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 <td>ja</td>
 <td>Report</td>
 <td>7d</td>
-<td>-</td>
+<td>2026-09-01</td>
 </tr><tr><td>2</td>
 <td><code>doc-drift</code></td>
 <td>nein</td>
@@ -168,18 +171,21 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 </ol></div>
 <div class="section level2">
 <h2 id="backlog">Backlog<a class="anchor" aria-label="anchor" href="#backlog"></a></h2>
-<p><em>(leer)</em></p>
-</div>
+<ul><li>
+<strong><code>doc-drift</code>:</strong> <code>roxygen2::roxygenise()</code> meldet 12 <code>Could not resolve link</code>-Warnungen auf <code>explain_rule</code> und <code>list_rules</code> (ab <code>R/mcp_tools.R:676</code>). Unter roxygen2 8.0.0 und 8.1.0 identisch, also keine Upgrade-Regression, sondern Doku-Drift. Aufgefallen im Lauf <code>deps-audit</code> 2026-09-01, gehoert aber in Job 2.</li>
+<li>
+<strong>Automatisierung:</strong> minimale <code>.github/dependabot.yml</code> mit <em>nur</em> dem <code>github-actions</code>-Oekosystem. Anlass: <code>JamesIves/github-pages-deploy-action@v4.5.0</code> in <code>.github/workflows/pkgdown.yaml:45</code> ist exakt gepinnt und veraltet still. Fuer die <code>DESCRIPTION</code>-Abhaengigkeiten bringt weder Dependabot noch Renovate etwas - beide haben keinen R-/CRAN-Manager. Beleg im Report vom 2026-09-01.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="lauf-historie">Lauf-Historie<a class="anchor" aria-label="anchor" href="#lauf-historie"></a></h2>
-<table class="table"><thead><tr><th>Datum</th>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Datum</th>
 <th>Job</th>
 <th>Output</th>
 <th>PR</th>
-</tr></thead><tbody><tr><td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
+</tr></thead><tbody><tr><td>2026-09-01</td>
+<td><code>deps-audit</code></td>
+<td><a href="roomba/reports/2026-09-01-deps-audit.html">Report</a></td>
+<td><a href="https://github.com/fabiandistler/lintrhelper/pull/48" class="external-link">#48</a></td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="abbaubedingung">Abbaubedingung<a class="anchor" aria-label="anchor" href="#abbaubedingung"></a></h2>
