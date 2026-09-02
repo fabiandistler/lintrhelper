@@ -85,7 +85,7 @@ dead-exports)
                 ns <- readLines("NAMESPACE", warn = FALSE)
                 ex <- sub("^export\\((.*)\\)$", "\\1", grep("^export\\(", ns, value = TRUE))
                 ex <- gsub("[\"`]", "", ex)
-                dirs <- c("tests", "vignettes", "inst", "man", "demo")
+                dirs <- c("tests", "vignettes", "inst", "demo")
                 dirs <- dirs[dir.exists(dirs)]
                 paths <- if (length(dirs)) list.files(dirs, recursive = TRUE, full.names = TRUE) else character()
                 txt <- if (length(paths)) unlist(lapply(paths, readLines, warn = FALSE)) else character()
