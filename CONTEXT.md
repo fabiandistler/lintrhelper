@@ -10,3 +10,6 @@
 - **Agent integration**: the mechanisms by which coding agents receive and obey linter rules.
 - **MCP server**: an MCP (Model Context Protocol) server exposing lintr lint results, rule metadata, and rule documentation as tools to coding agents; the chosen v0.2 differentiation wedge.
 - **Agent config export**: generating instruction-file entries (AGENTS.md/CLAUDE.md) from a rule set; advisory, deliberately deferred beyond v0.2.
+- **Candidate rule**: a linter rule being authored, considered against the rules that already exist.
+- **Rule corpus**: the set of existing rules a candidate rule is measured against — every linter lintr ships, not only the ones active by default.
+- **Rule overlap**: the relation where a candidate rule and an existing rule flag some of the same code. Weaker than *subsumption*, where an existing rule flags everything the candidate flags and more. Overlap is the relation reported to the author, because a near-duplicate is worth surfacing even when neither rule contains the other.
