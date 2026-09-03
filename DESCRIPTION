@@ -1,7 +1,7 @@
 Package: lintrhelper
 Type: Package
 Title: Create Custom Lintr Rules Without XPath Knowledge
-Version: 0.3.2
+Version: 0.3.3
 Authors@R: person("Fabian", "Distler",
     email = "fabiandistler@users.noreply.github.com",
     role = c("aut", "cre"))

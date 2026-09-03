@@ -1,4 +1,12 @@
+# lintrhelper 0.3.3
+
 # lintrhelper 0.3.2
+
+* The README is now generated from `README.Rmd`, so its examples are executed at knit time rather than transcribed by hand: every code block and every lint shown under it is the real output of the code above it. A `readme-rmd-rendered` pre-commit hook flags a `README.md` that has fallen behind `README.Rmd`, for contributors who have run `pre-commit install`; nothing in CI enforces it.
+
+* The README is cut to under half its former length. The MCP server setup — interpreter check, per-client registration, timeout figures, tool reference, and the out-of-scope list — moves to a new "Use lintrhelper from a coding agent" vignette, which is where a reader wiring up an agent will look for it. The sections that restated the "Getting Started" and "Creating Linters Without XPath" vignettes near-verbatim are replaced by links to them, and the hand-copied function list is replaced by a link to the pkgdown reference index; that list had already drifted, omitting `start_mcp_server()`. The "install from an internal git mirror" section is dropped as generic `pak` usage against a placeholder host.
+
+* The README now states where lintrhelper overlaps lintr rather than leaving a reader to discover it. `undesirable_function_linter()`, `object_name_linter(regexes =)`, `assignment_linter()`, and `line_length_linter()` cover the same ground as four of the high-level builders, configurably; `require_function_arguments()` is the one with no lintr equivalent. Where they overlap the package's argument is ergonomics, and the README says so.
 
 # lintrhelper 0.3.1
 
