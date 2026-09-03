@@ -58,6 +58,12 @@
 <strong>MCP server</strong>: an MCP (Model Context Protocol) server exposing lintr lint results, rule metadata, and rule documentation as tools to coding agents; the chosen v0.2 differentiation wedge.</li>
 <li>
 <strong>Agent config export</strong>: generating instruction-file entries (AGENTS.md/CLAUDE.md) from a rule set; advisory, deliberately deferred beyond v0.2.</li>
+<li>
+<strong>Candidate rule</strong>: a linter rule being authored, considered against the rules that already exist.</li>
+<li>
+<strong>Rule corpus</strong>: the set of existing rules a candidate rule is measured against — every linter lintr ships, not only the ones active by default.</li>
+<li>
+<strong>Rule overlap</strong>: the relation where a candidate rule and an existing rule flag some of the same code. Weaker than <em>subsumption</em>, where an existing rule flags everything the candidate flags and more. Overlap is the relation reported to the author, because a near-duplicate is worth surfacing even when neither rule contains the other.</li>
 </ul></div>
 </div>
 
