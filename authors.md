@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/fabiandistler/lintrhelper/blob/main/DESCRIPTION)
 
 Distler F (2026). *lintrhelper: Create Custom Lintr Rules Without XPath
-Knowledge*. R package version 0.3.2,
+Knowledge*. R package version 0.3.3,
 <https://github.com/fabiandistler/lintrhelper>.
 
     @Manual{,
       title = {lintrhelper: Create Custom Lintr Rules Without XPath Knowledge},
       author = {Fabian Distler},
       year = {2026},
-      note = {R package version 0.3.2},
+      note = {R package version 0.3.3},
       url = {https://github.com/fabiandistler/lintrhelper},
     }
