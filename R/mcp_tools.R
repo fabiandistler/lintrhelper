@@ -148,7 +148,7 @@ mcp_tools <- function() {
 
 #' MCP Wrapper Around lint_file
 #'
-#' Wraps `lint_file()` in an [ellmer::ContentToolResult()] so the
+#' Wraps [lint_file()] in an [ellmer::ContentToolResult()] so the
 #' diagnostics reach the client as compact JSON rather than a deparsed R
 #' list.
 #'
@@ -219,7 +219,7 @@ lint_file <- function(path, project_dir = NULL) {
 
 #' MCP Wrapper Around lint_project
 #'
-#' Wraps `lint_project()` in an [ellmer::ContentToolResult()] so the
+#' Wraps [lint_project()] in an [ellmer::ContentToolResult()] so the
 #' diagnostics reach the client as compact JSON rather than a deparsed R
 #' list.
 #'
@@ -243,14 +243,14 @@ mcp_lint_project <- function(dir = NULL, changed_only = FALSE) {
 
 #' The Reply Payload for a lint_project Result
 #'
-#' `lint_project()` carries the note that `changed_only` could not be
+#' [lint_project()] carries the note that `changed_only` could not be
 #' honoured as an attribute, which JSON has no room for. The note matters
 #' to the agent — it explains why it asked for the changed files and got
 #' the whole project — so it becomes a field of the reply, with the
 #' diagnostics under `lints` beside it. A result with nothing to say stays
 #' the bare array of groups the other lint tool returns.
 #'
-#' @param result The result of `lint_project()`.
+#' @param result The result of [lint_project()].
 #'
 #' @return The groups as they came, or a list with `message` and `lints`.
 #'
@@ -271,7 +271,7 @@ tool_payload <- function(result) {
 #' Lint a Whole R Project
 #'
 #' Runs lintr over an entire project and returns the same compact
-#' diagnostics as `lint_file()`, grouped by file. This is the
+#' diagnostics as [lint_file()], grouped by file. This is the
 #' implementation behind the MCP `lint_project` tool.
 #'
 #' A directory carrying a `DESCRIPTION` with a `Package` field is linted
@@ -298,7 +298,7 @@ tool_payload <- function(result) {
 #'
 #' A directory git cannot report on — an unversioned one above all — is not
 #' an error. It is linted whole, and the result carries a `message`
-#' attribute saying why, which `tool_payload()` moves into the reply.
+#' attribute saying why, which [tool_payload()] moves into the reply.
 #'
 #' @param dir Project root to lint, and the anchor relative filenames are
 #'   reported against. When `NULL`, the `CLAUDE_PROJECT_DIR` environment
@@ -358,7 +358,7 @@ keep_changed_groups <- function(groups, files) {
 #' Lint Every File in a Project
 #'
 #' A directory carrying a `DESCRIPTION` is linted as a package, everything
-#' else as a plain directory. See `lint_project()` for why the check never
+#' else as a plain directory. See [lint_project()] for why the check never
 #' looks upwards.
 #'
 #' @param anchor Normalised project root, already the working directory.
@@ -416,7 +416,7 @@ normalise_changed_only <- function(changed_only) {
 #' relative to `dir`, which is what makes an anchor inside a larger
 #' repository report its own files and no others.
 #'
-#' The paths are not narrowed to what lintr would read: `lint_project()`
+#' The paths are not narrowed to what lintr would read: [lint_project()]
 #' intersects them with the groups of a whole-project lint, so a path lintr
 #' never walks simply matches nothing.
 #'
@@ -526,7 +526,7 @@ is_package_dir <- function(dir) {
 
 #' MCP Wrapper Around list_rules
 #'
-#' Wraps `list_rules()` in an [ellmer::ContentToolResult()] so the rule
+#' Wraps [list_rules()] in an [ellmer::ContentToolResult()] so the rule
 #' metadata reaches the client as compact JSON rather than a deparsed R
 #' list.
 #'
@@ -646,7 +646,7 @@ normalise_tags <- function(tags) {
 
 #' MCP Wrapper Around explain_rule
 #'
-#' Wraps `explain_rule()` in an [ellmer::ContentToolResult()] so the rule
+#' Wraps [explain_rule()] in an [ellmer::ContentToolResult()] so the rule
 #' documentation reaches the client as compact JSON rather than a deparsed
 #' R list.
 #'
@@ -679,12 +679,12 @@ mcp_explain_rule <- function(name) {
 #' comes back.
 #'
 #' A name no linter carries is not an error, the same way an unknown tag is
-#' not one in `list_rules()`. The result reports `found = FALSE` and names
+#' not one in [list_rules()]. The result reports `found = FALSE` and names
 #' the closest linters, so a near miss — `"assignment"` for
 #' `"assignment_linter"`, or a typo — is corrected in one step rather than
 #' by retrying blind.
 #'
-#' Deprecated linters are explainable even though `list_rules()` leaves
+#' Deprecated linters are explainable even though [list_rules()] leaves
 #' them out of its listing: a name only turns up in a `.lintr` or an old
 #' lint after it has been deprecated, which is exactly when the agent needs
 #' the help page to say so. The `tags` in the result carry `"deprecated"`.
