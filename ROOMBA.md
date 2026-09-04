@@ -10,10 +10,10 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 
 | Feld | Wert |
 |---|---|
-| Letzter Lauf | 2026-09-01 |
-| Letzter Job | `deps-audit` (Report, keine Codeaenderung) |
-| Naechster faelliger Job | `doc-drift` (nie gelaufen -> Score unendlich, sofort faellig) |
-| Offene roomba-PRs | [#48](https://github.com/fabiandistler/lintrhelper/pull/48) `roomba/deps-audit-2026-09-01` |
+| Letzter Lauf | 2026-09-02 |
+| Letzter Job | `dead-exports` (Report, keine Streichung; 1-Zeilen-Fix an der Vorstufe) |
+| Naechster faelliger Job | `error-edges` (nie gelaufen -> Score unendlich, sofort faellig) |
+| Offene roomba-PRs | [#49](https://github.com/fabiandistler/lintrhelper/pull/49) `roomba/doc-drift-2026-09-01`, [#51](https://github.com/fabiandistler/lintrhelper/pull/51) `roomba/dead-exports-2026-09-02` |
 
 ## Regeln
 
@@ -89,7 +89,7 @@ Die vorhandenen Workflows `R-CMD-check.yaml` und `pkgdown.yaml` blieben unangeta
 |---|---|---|---|---|---|
 | 1 | `deps-audit` | ja | Report | 7d | 2026-09-01 |
 | 2 | `doc-drift` | nein | PR | 14d | - |
-| 3 | `dead-exports` | ja | PR | 14d | - |
+| 3 | `dead-exports` | ja | PR | 14d | 2026-09-02 |
 | 4 | `error-edges` | nein | Report | 14d | - |
 | 5 | `test-flakiness` | ja | PR | 30d | - |
 | 6 | `perf-quickwins` | nein | Report | 30d | - |
@@ -118,12 +118,19 @@ Rest-Frage je Job (Details im Skill unter `references/jobs.md`):
   `.github/workflows/pkgdown.yaml:45` ist exakt gepinnt und veraltet still. Fuer die
   `DESCRIPTION`-Abhaengigkeiten bringt weder Dependabot noch Renovate etwas - beide haben
   keinen R-/CRAN-Manager. Beleg im Report vom 2026-09-01.
+- **Plugin-Asset:** `~/.claude/skills/roomba/assets/roomba-scan.sh` durchsucht im Job
+  `dead-exports` auch `man/`. Da roxygen2 pro Export eine `man/<name>.Rd` mit `\name{}`
+  und `\alias{}` erzeugt, findet sich jeder dokumentierte Export dort selbst - die
+  Kandidatenliste ist fuer jedes R-Paket strukturell leer. In diesem Repo am 2026-09-02
+  behoben; das Asset selbst wird aus einem Repo-Lauf heraus nicht angefasst und trifft
+  jedes weitere Repo, das roomba dort bootstrappt.
 
 ## Lauf-Historie
 
 | Datum | Job | Output | PR |
 |---|---|---|---|
 | 2026-09-01 | `deps-audit` | [Report](roomba/reports/2026-09-01-deps-audit.md) | [#48](https://github.com/fabiandistler/lintrhelper/pull/48) |
+| 2026-09-02 | `dead-exports` | [Report](roomba/reports/2026-09-02-dead-exports.md) | [#51](https://github.com/fabiandistler/lintrhelper/pull/51) |
 
 ## Abbaubedingung
 
