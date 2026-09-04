@@ -11,7 +11,7 @@ Pruefdatum: 2026-12-01 - siehe Abbaubedingung unten.
 | Feld | Wert |
 |---|---|
 | Letzter Lauf | 2026-09-01 |
-| Letzter Job | `doc-drift` (PR, nur Doku - README, Vignette, roxygen-Kommentare) |
+| Letzter Job | `doc-drift` (PR, nur Doku - Vignette + Report) |
 | Naechster faelliger Job | `dead-exports` (nie gelaufen -> Score unendlich, sofort faellig) |
 | Offene roomba-PRs | [#49](https://github.com/fabiandistler/lintrhelper/pull/49) `roomba/doc-drift-2026-09-01` |
 
@@ -109,6 +109,11 @@ Rest-Frage je Job (Details im Skill unter `references/jobs.md`):
 
 ## Backlog
 
+- **roxygen-Links auf interne Funktionen.** `roxygen2::roxygenise()` meldet 12
+  `Could not resolve link`-Warnungen in `R/mcp_tools.R` (`lint_file`, `lint_project`,
+  `list_rules`, `explain_rule`, `tool_payload` - alle `@noRd`, alle intern). Die
+  `[fn()]`-Schreibweise bleibt per Review stehen (Markdown-Link-Konvention), die
+  Warnungen damit auch. Beleg im Report vom 2026-09-01 (Befund 5).
 - **Doku wird nirgends ausgefuehrt.** 13 von 13 `man/*.Rd` liegen komplett in
   `\dontrun{}`, 21 von 24 Vignetten-Chunks sind `eval=FALSE`, ein `README.Rmd` gibt es
   nicht. `checking examples ... OK` und `checking re-building of vignette outputs ... OK`
