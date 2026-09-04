@@ -39,8 +39,9 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
+# pkgdown site (agent skill config under docs/agents/ is tracked)
+docs/*
+!docs/agents/
 
 # translation temp files
 po/*~
