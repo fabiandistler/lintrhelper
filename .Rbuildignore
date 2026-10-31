@@ -6,6 +6,7 @@
 ^\.git$
 ^_pkgdown\.yml$
 ^docs$
+^_site$
 ^pkgdown$
 ^cran-comments\.md$
 ^CODE_OF_CONDUCT\.md$

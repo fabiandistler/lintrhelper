@@ -1,5 +1,7 @@
 # lintrhelper 0.3.3
 
+* The pkgdown site now builds into `_site/` instead of `docs/`, which holds the hand-written agent docs under `docs/agents/`. pkgdown refuses to clear a `docs/` it did not build, so the site had not been rebuilt or deployed since those docs were added.
+
 # lintrhelper 0.3.2
 
 * The README is now generated from `README.Rmd`, so its examples are executed at knit time rather than transcribed by hand: every code block and every lint shown under it is the real output of the code above it. A `readme-rmd-rendered` pre-commit hook flags a `README.md` that has fallen behind `README.Rmd`, for contributors who have run `pre-commit install`; nothing in CI enforces it.
