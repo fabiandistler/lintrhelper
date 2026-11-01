@@ -146,6 +146,26 @@ mcp_tools <- function() {
 }
 
 
+#' A Tool Reply Serialised as JSON
+#'
+#' Serialises a reply to compact JSON before handing it to ellmer. Since
+#' ellmer 0.5.0, a tool result whose value is an R list is no longer
+#' converted to JSON: `mcptools` then puts the raw list into the MCP `text`
+#' field. A JSON string passes through unchanged on every ellmer version.
+#' The options match the `to_json()` ellmer 0.4.2 applied, so the reply
+#' keeps its shape: scalars unboxed, empty lists as `[]`.
+#'
+#' @param reply The R value to send to the client.
+#'
+#' @return An `ellmer::ContentToolResult` whose value is a `json` string.
+#'
+#' @keywords internal
+#' @noRd
+json_tool_result <- function(reply) {
+  ellmer::ContentToolResult(value = jsonlite::toJSON(reply, auto_unbox = TRUE))
+}
+
+
 #' MCP Wrapper Around lint_file
 #'
 #' Wraps [lint_file()] in an [ellmer::ContentToolResult()] so the
@@ -160,7 +180,7 @@ mcp_tools <- function() {
 #' @noRd
 mcp_lint_file <- function(path, project_dir = NULL) {
   tryCatch(
-    ellmer::ContentToolResult(value = lint_file(path, project_dir)),
+    json_tool_result(lint_file(path, project_dir)),
     error = function(cnd) {
       ellmer::ContentToolResult(error = conditionMessage(cnd))
     }
@@ -231,9 +251,7 @@ lint_file <- function(path, project_dir = NULL) {
 #' @noRd
 mcp_lint_project <- function(dir = NULL, changed_only = FALSE) {
   tryCatch(
-    ellmer::ContentToolResult(
-      value = tool_payload(lint_project(dir, changed_only))
-    ),
+    json_tool_result(tool_payload(lint_project(dir, changed_only))),
     error = function(cnd) {
       ellmer::ContentToolResult(error = conditionMessage(cnd))
     }
@@ -538,7 +556,7 @@ is_package_dir <- function(dir) {
 #' @noRd
 mcp_list_rules <- function(tags = NULL) {
   tryCatch(
-    ellmer::ContentToolResult(value = list_rules(tags)),
+    json_tool_result(list_rules(tags)),
     error = function(cnd) {
       ellmer::ContentToolResult(error = conditionMessage(cnd))
     }
@@ -658,7 +676,7 @@ normalise_tags <- function(tags) {
 #' @noRd
 mcp_explain_rule <- function(name) {
   tryCatch(
-    ellmer::ContentToolResult(value = explain_rule(name)),
+    json_tool_result(explain_rule(name)),
     error = function(cnd) {
       ellmer::ContentToolResult(error = conditionMessage(cnd))
     }

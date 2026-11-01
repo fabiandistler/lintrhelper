@@ -251,6 +251,27 @@ test_that("the MCP wrapper serialises diagnostics as compact JSON", {
   expect_type(parsed[[1]]$lints[[1]]$line, "integer")
 })
 
+test_that("every MCP wrapper hands ellmer a JSON string, not an R list", {
+  skip_if_not_installed("ellmer")
+  skip_if_not_installed("jsonlite")
+  skip_if_not_installed("lintr")
+
+  proj <- make_project(withr::local_tempdir())
+  withr::local_envvar(CLAUDE_PROJECT_DIR = NA)
+
+  results <- list(
+    mcp_lint_file("R/foo.R", project_dir = proj),
+    mcp_lint_project(proj),
+    mcp_list_rules(),
+    mcp_explain_rule("assignment_linter")
+  )
+
+  for (result in results) {
+    expect_null(result@error)
+    expect_s3_class(result@value, "json")
+  }
+})
+
 test_that("a clean file serialises to an empty JSON array", {
   skip_if_not_installed("ellmer")
 
