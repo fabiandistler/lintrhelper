@@ -1,5 +1,12 @@
 # Changelog
 
+## lintrhelper 0.3.4
+
+- The pkgdown site now builds into `_site/` instead of `docs/`, which
+  holds the hand-written agent docs under `docs/agents/`. pkgdown
+  refuses to clear a `docs/` it did not build, so the site had not been
+  rebuilt or deployed since those docs were added.
+
 ## lintrhelper 0.3.3
 
 ## lintrhelper 0.3.2
