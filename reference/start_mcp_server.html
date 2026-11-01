@@ -27,7 +27,7 @@ finds for the code they lint."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lintrhelper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,9 +89,9 @@ the protocol.</p>
     <p>The function blocks the R process indefinitely and is not intended for
 interactive use. Register it with an MCP client instead — see the
 examples for a Claude Code <code>.mcp.json</code> entry.</p>
-<p><code>mcptools</code> and <code>ellmer</code> are only suggested dependencies, so authors who
-merely write linters need not install the MCP stack. Calling this
-function without them raises an installation prompt.</p>
+<p><code>mcptools</code>, <code>ellmer</code> and <code>jsonlite</code> are only suggested dependencies, so
+authors who merely write linters need not install the MCP stack. Calling
+this function without them raises an installation prompt.</p>
 <p>This package writes only JSON-RPC to stdout; its own diagnostics use
 <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> so they land on stderr and cannot corrupt the protocol.
 Startup files are outside its control, though: anything an <code>.Rprofile</code>
