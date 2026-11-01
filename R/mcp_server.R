@@ -16,9 +16,9 @@
 #' interactive use. Register it with an MCP client instead — see the
 #' examples for a Claude Code `.mcp.json` entry.
 #'
-#' `mcptools` and `ellmer` are only suggested dependencies, so authors who
-#' merely write linters need not install the MCP stack. Calling this
-#' function without them raises an installation prompt.
+#' `mcptools`, `ellmer` and `jsonlite` are only suggested dependencies, so
+#' authors who merely write linters need not install the MCP stack. Calling
+#' this function without them raises an installation prompt.
 #'
 #' This package writes only JSON-RPC to stdout; its own diagnostics use
 #' [message()] so they land on stderr and cannot corrupt the protocol.
@@ -52,7 +52,7 @@ start_mcp_server <- function() {
 
 check_mcp_deps <- function() {
   rlang::check_installed(
-    c("mcptools", "ellmer"),
+    c("mcptools", "ellmer", "jsonlite"),
     reason = "to start the lintrhelper MCP server."
   )
 }

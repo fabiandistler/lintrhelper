@@ -29,9 +29,9 @@ The function blocks the R process indefinitely and is not intended for
 interactive use. Register it with an MCP client instead — see the
 examples for a Claude Code \code{.mcp.json} entry.
 
-\code{mcptools} and \code{ellmer} are only suggested dependencies, so authors who
-merely write linters need not install the MCP stack. Calling this
-function without them raises an installation prompt.
+\code{mcptools}, \code{ellmer} and \code{jsonlite} are only suggested dependencies, so
+authors who merely write linters need not install the MCP stack. Calling
+this function without them raises an installation prompt.
 
 This package writes only JSON-RPC to stdout; its own diagnostics use
 \code{\link[=message]{message()}} so they land on stderr and cannot corrupt the protocol.

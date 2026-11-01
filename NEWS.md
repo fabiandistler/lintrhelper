@@ -2,6 +2,8 @@
 
 * The pkgdown site now builds into `_site/` instead of `docs/`, which holds the hand-written agent docs under `docs/agents/`. pkgdown refuses to clear a `docs/` it did not build, so the site had not been rebuilt or deployed since those docs were added.
 
+* The MCP tools now serialise their replies to JSON themselves instead of leaving it to ellmer. ellmer 0.5.0 stopped converting a tool result that is an R list, so `mcptools` put the raw list into the MCP `text` field and every `lint_file` and `lint_project` reply, and every reply to a client on a protocol older than 2025-06-18, reached the client malformed. The JSON matches what ellmer 0.4.2 produced. Replies no longer carry `structuredContent`, which no tool declared an output schema for; the same JSON is in the `text` field. `start_mcp_server()` now also checks for `jsonlite`, which the tools call directly.
+
 # lintrhelper 0.3.3
 
 # lintrhelper 0.3.2
